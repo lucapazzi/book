@@ -616,16 +616,97 @@ Part II established the structure of a PWS system: an Assembly of controlled com
 
 <div class="constraint">X → Y</div>
 
-<p>This transition is associated with <strong>actions</strong>—commands sent to the controlled components (e.g., <code>&lt;laser.on&gt;</code>, <code>&lt;cover.unlock&gt;</code>). For each configuration <code>c</code> in <code>Conf(X)</code>, the transformation proceeds as follows:</p>
+<p>A triggered transition may carry a <strong>guard</strong> <code>[g]</code>—a condition over component states—and/or one or more <strong>actions</strong>—commands sent to the controlled components (e.g., <code>&lt;laser.on&gt;</code>, <code>&lt;cover.unlock&gt;</code>). For each configuration <code>c</code> in <code>Conf(X)</code>, the transition proceeds as follows:</p>
 
 <ol style="margin: 0.8rem 0 0.8rem 1.5rem;">
-  <li>Apply the actions associated with the transition to the components in configuration <code>c</code>.</li>
-  <li>Each action induces a state change in the targeted component (e.g., issuing <code>&lt;laser.on&gt;</code> transforms a laser in state <code>Off</code> into state <code>On</code>).</li>
-  <li>The result is a new configuration <code>c'</code> reflecting the component state changes.</li>
+  <li><strong>Guard check.</strong> If <code>c</code> does not satisfy the guard <code>g</code>, this transition ignores <code>c</code> entirely: it is not transferred to <code>Y</code>. Only the configurations that satisfy <code>g</code> continue to the following steps.</li>
+  <li><strong>Action (if any).</strong> If the transition carries actions, apply them to the selected configuration <code>c</code>; each action induces a state change in the targeted component (e.g., issuing <code>&lt;laser.on&gt;</code> transforms a laser in state <code>Off</code> into state <code>On</code>). If the transition carries no actions, <code>c</code> is left untouched.</li>
+  <li>The result is a configuration <code>c'</code>—the transformed world when actions were applied, or <code>c</code> itself when there were none.</li>
   <li>Add <code>c'</code> to <code>Conf(Y)</code>.</li>
 </ol>
 
 <p>Not all actions succeed on all components. If a component's interface does not include the requested command, the action fails and the configuration remains unchanged. This reflects a real-world principle: <em>the controller proposes; the component disposes.</em></p>
+
+<h3>The guard selects which configurations are transferred</h3>
+
+<p>The guard deserves to be singled out, because its role differs in kind from that of the actions. An action <em>transforms</em> a configuration; a guard <em>selects</em> one. On a triggered transition <code>X → Y [g]</code>, the guard partitions <code>Conf(X)</code> into the configurations that satisfy <code>g</code> and those that do not, and only the satisfying ones take part in the transfer. Formally, the transition first computes the selected set</p>
+
+<div class="constraint">Sel = { c ∈ Conf(X) | c ⊨ g }</div>
+
+<p>and only the worlds in <code>Sel</code> are handed on to <code>Y</code>. A configuration that fails the guard is simply ignored by this transition—though it may still be transferred by other outgoing transitions of <code>X</code>. An <em>unguarded</em> transition is the limiting case in which <code>Sel = Conf(X)</code>: every world is selected.</p>
+
+<p>This selection happens <strong>before</strong>, and independently of, any action, which yields two distinct transfer mechanisms:</p>
+
+<ul>
+  <li><strong>Guard, no action</strong> — each world in <code>Sel</code> is transferred to <code>Conf(Y)</code> <em>unchanged</em>. The transition narrows the set of worlds but does not alter them: a <em>filtered identity</em> (Figure&nbsp;4.1).</li>
+  <li><strong>Guard and action</strong> — each world in <code>Sel</code> is first rewritten by the actions into <code>c'</code>, and <code>c'</code> is accumulated into <code>Conf(Y)</code>. The guard chooses the inputs; the action rewrites them (Figure&nbsp;4.2).</li>
+</ul>
+
+<p>In both mechanisms the guard is the gatekeeper: a world that fails <code>g</code> is never transferred, whether the transition would have passed it through untouched or transformed it first. The two figures below contrast the two cases on the Cover–Laser Assembly, using the guard <code>[cover.Closed]</code>.</p>
+
+<figure>
+<svg viewBox="0 0 820 290" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Guarded transition without action: filtered identity" style="width:100%;height:auto;background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+ <defs>
+  <marker id="p3a-g" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2d5016"/></marker>
+  <marker id="p3a-x" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c9c6bd"/></marker>
+ </defs>
+ <rect x="16" y="34" width="200" height="220" rx="6" fill="#fff" stroke="#d4d0c8" stroke-width="1.5"/>
+ <path d="M16,40 a6,6 0 0 1 6,-6 h188 a6,6 0 0 1 6,6 v24 h-200 z" fill="#2d5016"/>
+ <text x="116" y="57" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-weight="700" font-size="15" fill="#fff">Conf(X)</text>
+ <text x="116" y="105" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="15" fill="#bdb9b0">(Open, Off)</text>
+ <text x="116" y="140" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="15" fill="#bdb9b0">(Open, On)</text>
+ <text x="116" y="185" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="15" fill="#1a3a6b">(Closed, Off)</text>
+ <text x="116" y="220" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="15" fill="#1a3a6b">(Closed, On)</text>
+ <text x="405" y="26" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="14" font-weight="600" fill="#8b1a1a">guard  [cover.Closed]</text>
+ <line x1="405" y1="36" x2="405" y2="250" stroke="#8b1a1a" stroke-width="2" stroke-dasharray="6 4"/>
+ <text x="405" y="272" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="13" fill="#8b1a1a">keeps only cover = Closed</text>
+ <line x1="220" y1="101" x2="388" y2="116" stroke="#c9c6bd" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#p3a-x)"/>
+ <line x1="220" y1="136" x2="388" y2="126" stroke="#c9c6bd" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#p3a-x)"/>
+ <text x="360" y="150" fill="#c9c6bd" font-size="20" font-family="monospace">&#10007;</text>
+ <path d="M220,181 H590" fill="none" stroke="#2d5016" stroke-width="2" marker-end="url(#p3a-g)"/>
+ <path d="M220,216 H590" fill="none" stroke="#2d5016" stroke-width="2" marker-end="url(#p3a-g)"/>
+ <text x="480" y="171" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="13" fill="#3a3a4a">no action — transferred unchanged</text>
+ <rect x="600" y="150" width="200" height="104" rx="6" fill="#fff" stroke="#d4d0c8" stroke-width="1.5"/>
+ <path d="M600,156 a6,6 0 0 1 6,-6 h188 a6,6 0 0 1 6,6 v22 h-200 z" fill="#2d5016"/>
+ <text x="700" y="171" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-weight="700" font-size="15" fill="#fff">Conf(Y)</text>
+ <text x="700" y="205" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="15" fill="#1a3a6b">(Closed, Off)</text>
+ <text x="700" y="235" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="15" fill="#1a3a6b">(Closed, On)</text>
+</svg>
+<figcaption><strong>Figure 4.1</strong> &mdash; A triggered transition <code>X → Y</code> carrying a guard but <em>no action</em>. The guard <code>[cover.Closed]</code> selects, out of <code>Conf(X)</code>, only the worlds in which the cover is closed; the two greyed worlds fail the guard and are not transferred. Each selected world is then copied into <code>Conf(Y)</code> <em>unchanged</em>—the transition acts as a filtered identity.</figcaption>
+</figure>
+
+<figure>
+<svg viewBox="0 0 820 290" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Guarded transition with action: selection then transformation" style="width:100%;height:auto;background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+ <defs>
+  <marker id="p3b-g" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2d5016"/></marker>
+  <marker id="p3b-b" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#1a3a6b"/></marker>
+  <marker id="p3b-x" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c9c6bd"/></marker>
+ </defs>
+ <rect x="16" y="34" width="200" height="220" rx="6" fill="#fff" stroke="#d4d0c8" stroke-width="1.5"/>
+ <path d="M16,40 a6,6 0 0 1 6,-6 h188 a6,6 0 0 1 6,6 v24 h-200 z" fill="#2d5016"/>
+ <text x="116" y="57" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-weight="700" font-size="15" fill="#fff">Conf(X)</text>
+ <text x="116" y="105" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="15" fill="#bdb9b0">(Open, Off)</text>
+ <text x="116" y="140" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="15" fill="#bdb9b0">(Open, On)</text>
+ <text x="116" y="185" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="15" fill="#1a3a6b">(Closed, Off)</text>
+ <text x="116" y="220" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="15" fill="#1a3a6b">(Closed, On)</text>
+ <text x="330" y="26" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="14" font-weight="600" fill="#8b1a1a">[cover.Closed]</text>
+ <line x1="330" y1="36" x2="330" y2="250" stroke="#8b1a1a" stroke-width="2" stroke-dasharray="6 4"/>
+ <line x1="220" y1="101" x2="313" y2="116" stroke="#c9c6bd" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#p3b-x)"/>
+ <line x1="220" y1="136" x2="313" y2="126" stroke="#c9c6bd" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#p3b-x)"/>
+ <path d="M220,181 H430" fill="none" stroke="#2d5016" stroke-width="2" marker-end="url(#p3b-g)"/>
+ <path d="M220,216 H430" fill="none" stroke="#2d5016" stroke-width="2" marker-end="url(#p3b-g)"/>
+ <rect x="432" y="163" width="150" height="72" rx="6" fill="#f0f5ff" stroke="#1a3a6b" stroke-width="1.5"/>
+ <text x="507" y="157" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="13" fill="#1a3a6b">action</text>
+ <text x="507" y="204" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="15" fill="#1a3a6b">&#10216;laser.on&#10217;</text>
+ <path d="M582,199 H636" fill="none" stroke="#1a3a6b" stroke-width="2" marker-end="url(#p3b-b)"/>
+ <rect x="640" y="163" width="164" height="72" rx="6" fill="#fff" stroke="#d4d0c8" stroke-width="1.5"/>
+ <path d="M640,169 a6,6 0 0 1 6,-6 h152 a6,6 0 0 1 6,6 v20 h-164 z" fill="#2d5016"/>
+ <text x="722" y="183" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-weight="700" font-size="15" fill="#fff">Conf(Y)</text>
+ <text x="722" y="217" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="15" fill="#1a3a6b">(Closed, On)</text>
+ <text x="507" y="258" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="13" fill="#3a3a4a">both selected worlds &#8594; (Closed, On)</text>
+</svg>
+<figcaption><strong>Figure 4.2</strong> &mdash; The same guarded transition, now carrying the action <code>&lang;laser.on&rang;</code>. The guard again selects the closed-cover worlds; each selected world is then <em>transformed</em> by the action before being accumulated into <code>Conf(Y)</code>. Here both selected worlds map to <code>(Closed, On)</code>, which is added once. Guard = selection; action = rewriting.</figcaption>
+</figure>
 
 <h3>Configuration Accumulation</h3>
 
@@ -682,6 +763,45 @@ Conf(Y) := Conf(Y) ∪ {c'}
 <p>When <code>c'</code> is not in <code>Sem(s)</code>, the controller state and the actual world are no longer consistent—precisely the situation the Cover–Laser example in the next section will make concrete. This inconsistency is what triggers a controller transition in response. Crucially, that reaction need not simply accept <code>c'</code> as it stands: like any controller transition, it may carry actions of its own, and so it can transform <code>c'</code> further, into a world <code>c''</code>—possibly different from <code>c'</code>—which is the world the Assembly ends up in once the controller has reacted.</p>
 
 <p>Read this way, autonomous behaviour and controller reaction compose two successive moves between possible worlds: an uncontrolled move <code>c → c'</code>, driven by the Assembly itself, followed by a controlled move <code>c' → c''</code>, driven by the controller's reactive transition. Section&nbsp;6 studies exactly how this second move is computed, and what it takes for the controller to guarantee that such a reaction always exists.</p>
+
+<p>Figure&nbsp;5.1 makes this two-step "scatto" (trigger) concrete on the Cover–Laser Assembly, taking the controller state <code>Work</code> whose specified semantics is the single world <code>(Closed, On)</code>.</p>
+
+<figure>
+<svg viewBox="0 0 820 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Autonomous trigger: spontaneous exit from the semantics, then induced guard-triggered reaction" style="width:100%;height:auto;background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+ <defs>
+  <marker id="p3c-a" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#e6a800"/></marker>
+  <marker id="p3c-g" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2d5016"/></marker>
+ </defs>
+ <rect x="20" y="72" width="200" height="168" rx="10" fill="#eef4e8" stroke="#2d5016" stroke-width="1.5" stroke-dasharray="5 4"/>
+ <text x="120" y="58" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="12" font-weight="600" letter-spacing="0.06em" fill="#2d5016">STATE&#160;&#160;Work</text>
+ <text x="120" y="102" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="14" font-weight="700" fill="#2d5016">Sem(Work)</text>
+ <text x="120" y="120" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="11" fill="#6a7a5a">specified semantics</text>
+ <rect x="55" y="150" width="130" height="32" rx="16" fill="#fff" stroke="#1a3a6b" stroke-width="1.5"/>
+ <text x="120" y="171" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="14" fill="#1a3a6b">(Closed, On)</text>
+ <rect x="300" y="44" width="200" height="252" rx="10" fill="#fdf0f0" stroke="#8b1a1a" stroke-width="1.5" stroke-dasharray="5 4"/>
+ <text x="400" y="66" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="13" font-weight="700" fill="#8b1a1a">outside Sem(Work)</text>
+ <text x="400" y="84" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="11" fill="#a86a6a">no state admits it (yet)</text>
+ <rect x="335" y="150" width="130" height="32" rx="16" fill="#fff" stroke="#8b1a1a" stroke-width="1.5"/>
+ <text x="400" y="171" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="14" fill="#8b1a1a">(Open, On)</text>
+ <rect x="600" y="140" width="200" height="168" rx="10" fill="#eef4e8" stroke="#2d5016" stroke-width="1.5" stroke-dasharray="5 4"/>
+ <text x="700" y="128" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="12" font-weight="600" letter-spacing="0.06em" fill="#2d5016">STATE&#160;&#160;Idle</text>
+ <text x="700" y="170" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="14" font-weight="700" fill="#2d5016">Sem(Idle)</text>
+ <text x="700" y="188" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="11" fill="#6a7a5a">specified semantics</text>
+ <rect x="635" y="222" width="130" height="32" rx="16" fill="#fff" stroke="#1a3a6b" stroke-width="1.5"/>
+ <text x="700" y="243" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="14" fill="#1a3a6b">(Open, Off)</text>
+ <path d="M185,166 C 240,150 280,150 333,166" fill="none" stroke="#e6a800" stroke-width="2.5" marker-end="url(#p3c-a)"/>
+ <text x="258" y="128" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="13" font-weight="600" fill="#b58500">&#9312; spontaneous</text>
+ <text x="258" y="144" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="11" fill="#b58500">cover: Closed &#8594; Open</text>
+ <path d="M465,168 C 545,182 548,238 633,238" fill="none" stroke="#2d5016" stroke-width="2.5" marker-end="url(#p3c-g)"/>
+ <text x="556" y="150" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="13" font-weight="600" fill="#2d5016">&#9313; induced</text>
+ <text x="556" y="166" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="11" fill="#2d5016">[cover.Open] &#10216;laser.off&#10217;</text>
+ <rect x="150" y="322" width="13" height="13" rx="2" fill="#e6a800"/>
+ <text x="170" y="333" font-family="'Source Serif 4',Georgia,serif" font-size="12" fill="#3a3a4a">&#9312; spontaneous change — driven by the Assembly (autonomous)</text>
+ <rect x="150" y="342" width="13" height="13" rx="2" fill="#2d5016"/>
+ <text x="170" y="353" font-family="'Source Serif 4',Georgia,serif" font-size="12" fill="#3a3a4a">&#9313; induced change — driven by the controller's guard-triggered reaction</text>
+</svg>
+<figcaption><strong>Figure 5.1</strong> &mdash; The autonomous trigger as two successive moves between possible worlds. <strong>&#9312; Spontaneous change (amber):</strong> while the controller sits in <code>Work</code>, the cover opens autonomously, carrying the Assembly from <code>(Closed, On)</code>&mdash;a world inside <code>Sem(Work)</code>&mdash;to <code>(Open, On)</code>, which lies <em>outside</em> the specified semantics of every state the controller currently occupies. The controller state and the Assembly are no longer consistent. <strong>&#9313; Induced change (green):</strong> this inconsistency fires a guard-triggered reactive transition <code>Work → Idle</code> with guard <code>[cover.Open]</code> and action <code>&lang;laser.off&rang;</code>, which rewrites <code>(Open, On)</code> into <code>(Open, Off)</code>&mdash;a world admitted by <code>Sem(Idle)</code>. The first move is uncontrolled and driven by the Assembly; the second is induced and driven by the controller.</figcaption>
+</figure>
 
 <hr>
 
