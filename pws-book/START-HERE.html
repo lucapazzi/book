@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Welcome to PWS Tutorial</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Source Serif 4', Georgia, serif;
+    background: linear-gradient(135deg, #2d5016 0%, #1f3a0a 100%);
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  
+  .container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    max-width: 600px;
+    padding: 3rem;
+    text-align: center;
+  }
+  
+  h1 {
+    color: #2d5016;
+    font-size: 2.2rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .subtitle {
+    color: #666;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+  }
+  
+  .welcome-box {
+    background: #e8f0e2;
+    border: 2px solid #2d5016;
+    border-radius: 8px;
+    padding: 2rem;
+    margin: 2rem 0;
+    text-align: left;
+  }
+  
+  .welcome-box p {
+    margin-bottom: 1rem;
+    line-height: 1.7;
+    color: #333;
+  }
+  
+  .buttons {
+    display: flex;
+    gap: 1rem;
+    flex-direction: column;
+    margin: 2rem 0;
+  }
+  
+  .btn {
+    padding: 1.2rem 2rem;
+    font-size: 1.05rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-align: center;
+  }
+  
+  .btn-primary {
+    background: #2d5016;
+    color: white;
+  }
+  
+  .btn-primary:hover {
+    background: #1f3a0a;
+    box-shadow: 0 6px 20px rgba(45, 80, 22, 0.4);
+    transform: translateY(-2px);
+  }
+  
+  .btn-secondary {
+    background: white;
+    color: #2d5016;
+    border: 2px solid #2d5016;
+  }
+  
+  .btn-secondary:hover {
+    background: #e8f0e2;
+  }
+  
+  .info-section {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #ddd;
+  }
+  
+  .info-section h3 {
+    color: #2d5016;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .info-section p {
+    font-size: 0.95rem;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 0.8rem;
+  }
+  
+  .checklist {
+    list-style: none;
+    padding: 0;
+    text-align: left;
+    margin: 1rem 0;
+  }
+  
+  .checklist li {
+    padding: 0.6rem 0 0.6rem 2rem;
+    position: relative;
+  }
+  
+  .checklist li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: #2d5016;
+    font-weight: 700;
+    font-size: 1.2rem;
+  }
+  
+  footer {
+    font-size: 0.85rem;
+    color: #999;
+    margin-top: 2rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Welcome!</h1>
+  <p class="subtitle">Part-Whole Statecharts: Theory, Design, Practice</p>
+  
+  <div class="welcome-box">
+    <p>You've successfully extracted the complete tutorial on Part-Whole Statecharts (PWS)—a methodology for designing and verifying hierarchical reactive systems.</p>
+    <p>This is a self-contained, offline-ready HTML book with eight chapters, an introduction, and a reflective postface.</p>
+  </div>
+  
+  <div class="buttons">
+    <a href="index.html" class="btn btn-primary">📖 Begin Reading (Master Index)</a>
+    <a href="introduction.html" class="btn btn-secondary">Start with Introduction</a>
+  </div>
+  
+  <div class="info-section">
+    <h3>Quick Start</h3>
+    <ul class="checklist">
+      <li>No internet connection needed</li>
+      <li>No plugins or special software required</li>
+      <li>Works in any modern browser</li>
+      <li>Fully offline and shareable</li>
+    </ul>
+  </div>
+  
+  <div class="info-section">
+    <h3>Files in This Package</h3>
+    <p><strong>index.html</strong> — Master table of contents (recommended starting point)</p>
+    <p><strong>introduction.html</strong> — Philosophy and book overview</p>
+    <p><strong>part-1 through part-6</strong> — The eight complete chapters</p>
+    <p><strong>postface.html</strong> — Reflections and future directions</p>
+    <p><strong>README.txt</strong> — Detailed reading guide</p>
+    <p><strong>FILONI-REFERENCE.txt</strong> — Reference on the four workflow threads</p>
+  </div>
+  
+  <footer>
+    <p>Part-Whole Statecharts — A formal methodology for reactive systems</p>
+    <p style="margin-top: 0.5rem;">All content is self-contained and ready to read offline.</p>
+  </footer>
+</div>
+
+</body>
+</html>

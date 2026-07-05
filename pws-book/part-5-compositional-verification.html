@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part V — Compositional Verification</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=Source+Code+Pro:wght@400;500&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --bg: #fafaf8;
+    --accent: #2d5016;
+    --accent-light: #e8f0e2;
+    --red: #8b1a1a;
+    --red-light: #fde8e8;
+    --blue: #1a3a6b;
+    --border: #d4d0c8;
+    --caption-bg: #f0ede6;
+    --code-bg: #f5f3ee;
+    --sidebar: #f0ede6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.72;
+    font-size: 17px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 3rem 2rem 5rem;
+  }
+
+  h1 {
+    font-size: 2.1rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  h1 .part {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  h2 {
+    font-size: 1.45rem;
+    font-weight: 700;
+    margin-top: 3rem;
+    margin-bottom: 1rem;
+    color: var(--text);
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 0.4rem;
+  }
+
+  h2 .num {
+    color: var(--accent);
+    margin-right: 0.3em;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 1.8rem;
+    margin-bottom: 0.6rem;
+    color: var(--blue);
+  }
+
+  p {
+    margin-bottom: 1rem;
+  }
+
+  p.intro {
+    font-size: 1.02rem;
+    line-height: 1.78;
+    color: #2a2a3e;
+    margin-bottom: 1.4rem;
+  }
+
+  strong { font-weight: 600; }
+
+  em { font-style: italic; }
+
+  code {
+    font-family: 'Source Code Pro', 'Menlo', monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+    color: var(--blue);
+  }
+
+  .label {
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .label-red {
+    font-weight: 600;
+    color: var(--red);
+  }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-light);
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.95em;
+  }
+
+  blockquote p:last-child { margin-bottom: 0; }
+
+  blockquote strong { color: var(--text); }
+
+  .warning {
+    border-left: 3px solid var(--red);
+    background: var(--red-light);
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.95em;
+  }
+
+  figure {
+    margin: 2rem 0;
+    text-align: center;
+  }
+
+  figure img {
+    max-width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  figcaption {
+    margin-top: 0.8rem;
+    font-size: 0.88rem;
+    color: #555;
+    line-height: 1.55;
+    text-align: left;
+    background: var(--caption-bg);
+    padding: 0.7rem 1rem;
+    border-radius: 4px;
+    border-left: 3px solid var(--accent);
+  }
+
+  figcaption strong {
+    color: var(--text);
+  }
+
+  ul, ol {
+    margin: 0.8rem 0 1rem 1.5rem;
+  }
+
+  li {
+    margin-bottom: 0.4rem;
+  }
+
+  .hierarchy-tree {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.95em;
+    background: var(--code-bg);
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    line-height: 1.8;
+  }
+
+  table {
+    border-collapse: collapse;
+    margin: 1rem 0 1.5rem;
+    font-size: 0.92em;
+    width: 100%;
+  }
+
+  th {
+    background: var(--accent-light);
+    font-weight: 600;
+    text-align: left;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid var(--border);
+  }
+
+  td {
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .contract-box {
+    background: var(--accent-light);
+    border: 2px solid var(--accent);
+    border-radius: 6px;
+    padding: 1.2rem;
+    margin: 1.2rem 0;
+  }
+
+  .contract-box h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.6rem;
+  }
+
+  .contract-box ul {
+    margin: 0.5rem 0 0 1.5rem;
+  }
+
+  .contract-box li {
+    margin-bottom: 0.3rem;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2.5rem 0;
+  }
+
+  .toc {
+    background: var(--sidebar);
+    padding: 1.2rem 1.5rem;
+    border-radius: 6px;
+    margin: 2rem 0;
+  }
+
+  .toc-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 0.6rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .toc ol {
+    margin: 0;
+    padding-left: 1.2rem;
+  }
+
+  .toc li {
+    margin-bottom: 0.3rem;
+    font-size: 0.93rem;
+  }
+
+  .toc a {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .toc a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  .check-list {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .check-list li {
+    padding-left: 1.6rem;
+    position: relative;
+    margin-bottom: 0.6rem;
+  }
+
+  .check-list li::before {
+    content: "\2713";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+
+  .example {
+    border-left: 4px solid #1a3a6b;
+    background: #f0f5ff;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .example p:last-child { margin-bottom: 0; }
+
+  .formal {
+    border-left: 4px solid #2d5016;
+    background: #f5faf0;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+    font-family: 'Source Code Pro', monospace;
+  }
+
+  .formal p:last-child { margin-bottom: 0; }
+
+  .formal .computational-model {
+    border-top: 1px solid var(--accent);
+    border-bottom: 1px solid var(--accent);
+    padding: 0.8rem 0;
+    margin: 1rem 0;
+    background: rgba(45, 80, 22, 0.03);
+  }
+
+  .diagram-notation {
+    border-left: 4px solid #8b1a1a;
+    background: #fef0f0;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .diagram-notation p:last-child { margin-bottom: 0; }
+
+  .note {
+    border-left: 4px solid #1a5ab8;
+    background: #f0f8ff;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .note p:last-child { margin-bottom: 0; }
+
+  .constraint {
+    text-align: center;
+    font-size: 1em;
+    margin: 1rem 0;
+    background: var(--code-bg);
+    padding: 0.8rem;
+    border-radius: 4px;
+    font-family: 'Source Code Pro', monospace;
+  }
+
+  .epigraph {
+    font-style: italic;
+    color: #3a3a4a;
+    text-align: center;
+    margin: 2rem 0;
+    padding: 1rem;
+    border-top: 2px solid var(--accent);
+    border-bottom: 2px solid var(--accent);
+  }
+
+  .cycle-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 1.2rem 0;
+  }
+
+  .cycle-list li {
+    padding-left: 1.8rem;
+    position: relative;
+    margin-bottom: 0.8rem;
+    font-size: 0.98rem;
+  }
+
+  .cycle-list li::before {
+    content: attr(data-step);
+    position: absolute;
+    left: 0;
+    display: inline-block;
+    width: 1.4rem;
+    height: 1.4rem;
+    background: var(--accent);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 1.4rem;
+  }
+
+  .step-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.3rem 1rem;
+    margin: 1rem 0;
+  }
+
+  .step-num {
+    font-family: 'Source Code Pro', monospace;
+    font-weight: 500;
+    color: var(--accent);
+    font-size: 0.9em;
+  }
+
+  .eq {
+    text-align: center;
+    font-size: 1.15em;
+    margin: 1rem 0 1.2rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .intro {
+    font-size: 1.05em;
+    color: #333;
+    border-left: 3px solid var(--blue);
+    padding-left: 1.2rem;
+    margin: 1.5rem 0 2rem;
+  }
+
+  .keyboard {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.82em;
+    background: #e8e6e0;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 0.1em 0.45em;
+    box-shadow: 0 1px 0 #b0ada6;
+  }
+
+  .color-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin-right: 4px;
+    vertical-align: middle;
+    border: 1px solid rgba(0,0,0,0.15);
+  }
+
+  .green { background: #2d8b2d; }
+  .red { background: #c62828; }
+  .gold { background: #c8a600; }
+  .grey { background: #999; }
+  .blue-s { background: #1a5ab8; }
+  .amber { background: #e6a800; }
+
+  .error-list {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .error-list li {
+    padding-left: 1.6rem;
+    position: relative;
+    margin-bottom: 0.6rem;
+  }
+
+  .error-list li::before {
+    content: "\26A0";
+    position: absolute;
+    left: 0;
+    color: var(--red);
+  }
+
+  .dashboard-table {
+    width: auto;
+    margin: 1rem auto;
+  }
+
+  .dashboard-table td:first-child {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>
+  <span class="part">Part V — Compositional Verification</span>
+  Verifying Hierarchical Systems
+</h1>
+
+<p class="intro">
+Parts II through IV have shown how to design controllers that respect their declared semantics. But how do we verify correctness at scale? Classical model checking generates the complete global state space of the entire system—a process that succumbs to exponential state explosion as systems grow. PWS offers a radically different approach: rather than verifying the global system, verification follows the hierarchical structure of the controller hierarchy itself. Each controller is verified together with its directly controlled Assembly. Once verified, that subsystem becomes an abstract component for the level above. This part explores how compositional verification transforms intractable global problems into manageable local ones.
+</p>
+
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <ol>
+    <li><a href="#s1">Why verification can be compositional</a></li>
+    <li><a href="#s2">Contracts</a></li>
+    <li><a href="#s3">Contracts in PWS</a></li>
+    <li><a href="#s4">Assumptions and guarantees</a></li>
+    <li><a href="#s5">Contract composition</a></li>
+    <li><a href="#s6">Lifting and hiding</a></li>
+    <li><a href="#s7">Running example</a></li>
+    <li><a href="#s8">From local proofs to global correctness</a></li>
+  </ol>
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s1"><span class="num">1.</span> Why verification can be compositional</h2>
+
+<p>Traditional model checking considers the complete system as a single transition system. The global state space is generated by composing all the component machines and the controller into one behavioural model. Properties are then verified over this global model.</p>
+
+<p>Although this approach is completely general, it suffers from the well-known <span class="label">state explosion problem.</span> The number of reachable states grows exponentially with the number of interacting components. For a system with <em>n</em> components, each with an average of <em>s</em> states, the global state space contains approximately <em>s<sup>n</sup></em> states. As systems grow from dozens of components to hundreds, verification becomes computationally infeasible.</p>
+
+<p>The philosophy adopted by PWS is fundamentally different. <strong>Instead of constructing one large behavioural model, the verification process follows the hierarchical organization already present in the system.</strong></p>
+
+<blockquote>
+<p><strong>Each controller is verified together with the Assembly that it directly coordinates.</strong> Once this verification has been completed, the entire subsystem can be regarded as a single verified component by the controller located one level above. Verification therefore follows exactly the same hierarchical organization used during system design.</p>
+</blockquote>
+
+<p>This alignment between design hierarchy and verification hierarchy is what makes compositional verification possible—and powerful.</p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s2"><span class="num">2.</span> Contracts</h2>
+
+<p>To make hierarchical verification possible, every PWS exports a <span class="label">behavioural contract.</span></p>
+
+<p>A contract summarizes those aspects of the subsystem that are relevant for its environment, while hiding all internal implementation details. The parent controller therefore interacts with the contract rather than with the internal state machines composing the subsystem.</p>
+
+<p>This abstraction mechanism is essential: <strong>without it, the parent would need to understand every detail of every child, negating the benefits of hierarchy.</strong> With contracts, the parent only needs to know what the child <em>guarantees</em> to do.</p>
+
+<blockquote>
+<p>A contract is a formal boundary. On one side lies the subsystem's internal structure; on the other side lies its externally observable behaviour. The contract defines what can be known from outside without revealing what lies within.</p>
+</blockquote>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s3"><span class="num">3.</span> Contracts in PWS</h2>
+
+<p>A PWS contract is <strong>associated with the controller representing the whole.</strong> The contract does not expose the internal configuration semantics of the controlled Assembly. Instead, it exports only those properties that are observable by the parent controller.</p>
+
+<p>The contract therefore becomes the <span class="label">public behavioural interface</span> of the subsystem.</p>
+
+<p>Internally, the subsystem may contain:</p>
+<ul>
+  <li>many controllers at different hierarchy levels,</li>
+  <li>multiple component machines with complex interactions,</li>
+  <li>elaborate semantic constraints,</li>
+  <li>reactive repair transitions.</li>
+</ul>
+
+<p>Externally, however, <strong>it behaves exactly like a single controlled component.</strong> This abstraction mechanism allows hierarchical systems to be verified one level at a time, without ever needing to reconstruct the complete global state space.</p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s4"><span class="num">4.</span> Assumptions and guarantees</h2>
+
+<p>Every PWS contract is defined by a pair:</p>
+
+<div class="constraint" style="background: var(--accent-light); border-left: 3px solid var(--accent);">
+C = (Assumptions, Guarantees)
+</div>
+
+<h3>Assumptions</h3>
+
+<p>The <span class="label">assumption</span> part specifies which behaviours are expected from the environment. Assumptions describe the conditions under which the subsystem is expected to operate correctly.</p>
+
+<p>Typical assumptions include:</p>
+<ul>
+  <li>requests eventually terminate,</li>
+  <li>commands are not generated simultaneously,</li>
+  <li>communication channels preserve message ordering,</li>
+  <li>input sensors provide valid readings.</li>
+</ul>
+
+<h3>Guarantees</h3>
+
+<p>The <span class="label">guarantee</span> part specifies the behaviour provided by the subsystem whenever the assumptions hold. Guarantees describe what the system promises to deliver.</p>
+
+<p>Typical guarantees include:</p>
+<ul>
+  <li>safety properties (something bad never happens),</li>
+  <li>liveness properties (something good eventually happens),</li>
+  <li>sequencing constraints (events occur in the right order),</li>
+  <li>mutual exclusion conditions (conflicting states never coexist).</li>
+</ul>
+
+<blockquote>
+<p><strong>Notice the fundamental asymmetry:</strong> assumptions concern the environment, while guarantees concern the subsystem itself. The contract states: "If the environment behaves this way, we promise to behave that way."</p>
+</blockquote>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s5"><span class="num">5.</span> Contract composition</h2>
+
+<p>Suppose a subsystem <code>L</code> (Lamp) is controlled by another subsystem <code>S</code> (Traffic Light), which in turn belongs to a larger controller <code>C</code> (Intersection Controller).</p>
+
+<div class="hierarchy-tree">
+Lamp (L)
+  ↓ controlled by
+Traffic Light (S)
+  ↓ controlled by
+Intersection Controller (C)
+</div>
+
+<p>Verification proceeds <strong>from the leaves of the hierarchy towards the root.</strong></p>
+
+<h3>Step 1: Verify L</h3>
+<p>The Lamp subsystem is verified independently. Its contract exports guarantees about lamp behaviour: for example, <em>a lamp eventually reaches the requested state.</em></p>
+
+<h3>Step 2: Verify S using L's guarantees</h3>
+<p>The Traffic Light subsystem can now assume L's guarantees. These guarantees become <strong>observable facts</strong> for S. Using them, S can prove its own higher-level properties: for example, colour sequences follow traffic conventions, and lamp state transitions occur in the expected order.</p>
+
+<h3>Step 3: Verify C using S's guarantees</h3>
+<p>Finally, the Intersection Controller assumes the guarantees exported by the Traffic Lights and proves global safety properties: conflicting traffic directions are never simultaneously enabled.</p>
+
+<blockquote>
+<p><strong>At no point is it necessary to reconstruct the complete state space of the entire hierarchy.</strong> Each level verifies only its own Assembly, making use of the verified properties of the components below.</p>
+</blockquote>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s6"><span class="num">6.</span> Lifting and hiding</h2>
+
+<p>Contracts propagate through the hierarchy by means of two complementary operations:</p>
+
+<h3>Lift</h3>
+
+<p>Properties proved for a child become assumptions available to its parent. The <span class="label">lift operation</span> translates child properties into the vocabulary of the parent controller.</p>
+
+<p>For example, if the Lamp guarantees <em>"state changes occur within 100 ms,"</em> the Traffic Light lifts this guarantee to its own level: <em>"colour sequences respect timing constraints."</em></p>
+
+<h3>Hide</h3>
+
+<p>Once a subsystem has been verified, its internal machines become irrelevant to higher hierarchical levels. Only the observable guarantees remain visible. The <span class="label">hide operation</span> removes all internal implementation details while preserving the externally observable behaviour.</p>
+
+<p>For example, the Intersection Controller need not know how the Traffic Light internally manages lamp states. It only needs to know the colour sequence guarantee.</p>
+
+<blockquote>
+<p><strong>Together, lift and hide transform a verified PWS into an abstract behavioural component suitable for further composition.</strong> The internal complexity is encapsulated; the external interface is simplified.</p>
+</blockquote>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s7"><span class="num">7.</span> Running example</h2>
+
+<p>Consider the three-level hierarchy introduced above, with concrete contracts:</p>
+
+<div class="contract-box">
+  <h4>Lamp (L) Contract</h4>
+  <h4 style="font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text); margin: 0.8rem 0 0.4rem;">Assumptions:</h4>
+  <ul>
+    <li>Request commands are issued sequentially.</li>
+    <li>At most one command per cycle.</li>
+  </ul>
+  <h4 style="font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text); margin: 0.8rem 0 0.4rem;">Guarantees:</h4>
+  <ul>
+    <li>Lamp reaches requested state within 50 ms.</li>
+    <li>No spurious state changes.</li>
+  </ul>
+</div>
+
+<div class="contract-box">
+  <h4>Traffic Light (S) Contract</h4>
+  <h4 style="font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text); margin: 0.8rem 0 0.4rem;">Assumptions:</h4>
+  <ul>
+    <li>Cycle requests are non-overlapping.</li>
+    <li>Lamp guarantees are honoured (lifted from L).</li>
+  </ul>
+  <h4 style="font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text); margin: 0.8rem 0 0.4rem;">Guarantees:</h4>
+  <ul>
+    <li>Colour sequence: Red → Green → Yellow → Red.</li>
+    <li>Transitions respect timing (e.g., Green ≥ 10s).</li>
+  </ul>
+</div>
+
+<div class="contract-box">
+  <h4>Intersection Controller (C) Contract</h4>
+  <h4 style="font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text); margin: 0.8rem 0 0.4rem;">Assumptions:</h4>
+  <ul>
+    <li>Traffic Light guarantees are honoured (lifted from S).</li>
+  </ul>
+  <h4 style="font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text); margin: 0.8rem 0 0.4rem;">Guarantees:</h4>
+  <ul>
+    <li>No two perpendicular traffic directions have Green simultaneously.</li>
+    <li>Intersection remains safe under all operating conditions.</li>
+  </ul>
+</div>
+
+<p>Notice how each level assumes the guarantees of the level below, and exports guarantees for the level above. The composition is sound: global correctness follows from local correctness at each level.</p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s8"><span class="num">8.</span> From local proofs to global correctness</h2>
+
+<p>The fundamental principle underlying compositional verification is remarkably simple:</p>
+
+<blockquote>
+<p><strong>Every controller is responsible only for the correctness of its own Assembly. Whenever this responsibility has been formally discharged, the controller exports a contract summarizing its externally visible behaviour.</strong></p>
+</blockquote>
+
+<p>Higher hierarchical levels no longer need to know how this behaviour is internally produced. Consequently, <strong>the complexity of verification follows the modular organization of the system rather than the combinatorial growth of the global state space.</strong></p>
+
+<p>This is perhaps the most important consequence of the Part–Whole philosophy.</p>
+
+<h3>Three Hierarchies Become One</h3>
+
+<p>The modelling hierarchy becomes simultaneously:</p>
+<ul class="check-list">
+  <li>the <strong>design hierarchy</strong> (how we structure the controller),</li>
+  <li>the <strong>semantic hierarchy</strong> (how we define correctness at each level),</li>
+  <li>the <strong>verification hierarchy</strong> (how we prove correctness composionally).</li>
+</ul>
+
+<p>The three perspectives therefore coincide within a single formal framework. This alignment is what makes the PWS methodology so powerful: design, semantics, and verification are not three separate concerns, but aspects of a single coherent process.</p>
+
+<h3>What Lies Ahead</h3>
+
+<p>Contracts specify what a subsystem guarantees. But how are these guarantees <em>expressed</em> formally? Temporal logic provides the language. Properties such as <em>"a lamp eventually reaches the requested state"</em> or <em>"conflicting directions never have Green simultaneously"</em> are naturally expressed as temporal formulas.</p>
+
+<blockquote>
+<p>Temporal logic provides the language used to express these guarantees formally. Linear Temporal Logic (LTL) and related formalisms allow complex dynamic properties to be stated precisely, verified mechanically, and linked back to the design hierarchy.</p>
+</blockquote>
+
+<hr>
+
+<p style="margin-top: 3rem; font-size: 0.95rem; color: #555; border-top: 1px solid var(--border); padding-top: 1rem;">
+Compositional verification is not merely a pragmatic response to state explosion. It is a fundamental insight: systems designed hierarchically can be verified hierarchically. Design complexity and verification complexity follow the same modular structure. This unity of structure across design, semantics, and verification is what transforms PWS from a notational convenience into a systematic methodology for building and verifying reactive systems.
+</p>
+
+</div>
+</body>
+</html>

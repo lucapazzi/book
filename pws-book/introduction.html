@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part I — Introduction to PWS</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=Source+Code+Pro:wght@400;500&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --bg: #fafaf8;
+    --accent: #2d5016;
+    --accent-light: #e8f0e2;
+    --red: #8b1a1a;
+    --red-light: #fde8e8;
+    --blue: #1a3a6b;
+    --border: #d4d0c8;
+    --caption-bg: #f0ede6;
+    --code-bg: #f5f3ee;
+    --sidebar: #f0ede6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.72;
+    font-size: 17px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 3rem 2rem 5rem;
+  }
+
+  h1 {
+    font-size: 2.1rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  h1 .part {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  h2 {
+    font-size: 1.45rem;
+    font-weight: 700;
+    margin-top: 3rem;
+    margin-bottom: 1rem;
+    color: var(--text);
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 0.4rem;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 1.8rem;
+    margin-bottom: 0.6rem;
+    color: var(--blue);
+  }
+
+  p {
+    margin-bottom: 1rem;
+  }
+
+  p.intro {
+    font-size: 1.02rem;
+    line-height: 1.78;
+    color: #2a2a3e;
+    margin-bottom: 1.4rem;
+  }
+
+  strong { font-weight: 600; }
+
+  em { font-style: italic; }
+
+  code {
+    font-family: 'Source Code Pro', 'Menlo', monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+    color: var(--blue);
+  }
+
+  .label {
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-light);
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.95em;
+  }
+
+  blockquote p:last-child { margin-bottom: 0; }
+
+  blockquote strong { color: var(--text); }
+
+  .comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+
+  .comparison-item {
+    padding: 1rem;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    background: #fafaf8;
+  }
+
+  .comparison-item h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .comparison-item.traditional h4::before {
+    content: "▢";
+    color: var(--red);
+    font-size: 1.2em;
+  }
+
+  .comparison-item.pws h4::before {
+    content: "◆";
+    color: var(--accent);
+    font-size: 1.2em;
+  }
+
+  .comparison-item p {
+    font-size: 0.95em;
+    line-height: 1.65;
+  }
+
+  ul, ol {
+    margin: 0.8rem 0 1rem 1.5rem;
+  }
+
+  li {
+    margin-bottom: 0.4rem;
+  }
+
+  .pillars {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+    margin: 1.5rem 0;
+  }
+
+  .pillar {
+    background: var(--accent-light);
+    border-left: 4px solid var(--accent);
+    padding: 1rem;
+    border-radius: 4px;
+  }
+
+  .pillar-title {
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.4rem;
+    font-size: 0.95em;
+  }
+
+  .pillar-desc {
+    font-size: 0.95em;
+    line-height: 1.65;
+    color: var(--text);
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2.5rem 0;
+  }
+
+  figure { text-align: center; }
+
+  .workflow-box {
+    background: var(--code-bg);
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    padding: 1.2rem;
+    margin: 1.5rem 0;
+    text-align: center;
+  }
+
+  .workflow-box p {
+    margin: 0.6rem 0;
+    font-size: 0.95em;
+  }
+
+  .workflow-arrow {
+    display: inline-block;
+    margin: 0 0.6rem;
+    color: var(--accent);
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>
+  <span class="part">Part I — Introduction</span>
+  What Makes PWS Different
+</h1>
+
+<p class="intro">
+Reactive systems surround us. Air traffic control systems, medical devices, automotive controllers, industrial robots—these are systems that must continuously observe their environment, react to events, and maintain correctness under all circumstances. For decades, engineers have approached the design of such systems using a standard two-phase workflow: design first, verify afterwards. Part-Whole Statecharts offers a radically different approach. Rather than treating verification as a final validation step, PWS integrates formal reasoning into the design process itself. This introduction explores why this shift matters, and how it changes the way we think about building reactive systems.
+</p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2>The Traditional Approach</h2>
+
+<p>Designing reactive systems has traditionally been regarded as a <strong>two-stage process.</strong></p>
+
+<ol>
+  <li><strong>First,</strong> a controller is designed to achieve the desired behaviour.</li>
+  <li><strong>Only afterwards</strong> is the resulting model verified against its functional and temporal requirements using model checking or other formal verification techniques.</li>
+</ol>
+
+<p>This workflow has proved extremely successful. For decades, it has been the dominant paradigm in reactive system design. Thousands of industrial systems have been built using this approach.</p>
+
+<p>However, this workflow also exhibits an inherent limitation:</p>
+
+<blockquote>
+<p><strong>Verification remains a separate activity performed after the controller has already been designed.</strong> Whenever verification fails, the designer must revise the controller and repeat the process, often through several iterations.</p>
+</blockquote>
+
+<p>This creates a fundamental asymmetry in the design process. Designers invest effort building the controller structure first, and only then learn whether their choices were correct. By that point, significant rework may be necessary.</p>
+
+<div class="comparison">
+  <div class="comparison-item traditional">
+    <h4>Traditional Workflow</h4>
+    <p><strong>Design →</strong> Build controller</p>
+    <p><strong>Verify →</strong> Check properties</p>
+    <p><strong>If fail:</strong> Redesign and repeat</p>
+  </div>
+  <div class="comparison-item pws">
+    <h4>PWS Workflow</h4>
+    <p><strong>Specify →</strong> Declare semantics</p>
+    <p><strong>Construct →</strong> Build incrementally</p>
+    <p><strong>Verify →</strong> Check as you go</p>
+  </div>
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2>A Different Philosophy</h2>
+
+<p>The philosophy underlying Part-Whole Statecharts is fundamentally different.</p>
+
+<blockquote>
+<p><strong>Rather than treating verification as a final validation step, PWS integrates formal reasoning into the design process itself.</strong></p>
+</blockquote>
+
+<p>Instead of the design-then-verify workflow, PWS follows a <span class="label">semantics-first</span> approach:</p>
+
+<ol>
+  <li>The designer <strong>specifies the intended semantics</strong> of the controller states before building transitions.</li>
+  <li>The controller is <strong>progressively constructed</strong> so that this semantics is realized.</li>
+  <li>Local correctness obligations are <strong>verified as the design evolves.</strong></li>
+</ol>
+
+<p>Correctness therefore <strong>emerges incrementally</strong> rather than being assessed only after the controller has been completed.</p>
+
+<h3>More Than a Formalism</h3>
+
+<p>For this reason, PWS should not be regarded merely as a formalism for modelling or verifying reactive systems. <strong>It is, first and foremost, a design methodology.</strong></p>
+
+<p>PWS comprises four complementary components:</p>
+
+<div class="pillars">
+  <div class="pillar">
+    <div class="pillar-title">Modelling Language</div>
+    <div class="pillar-desc">Provides the vocabulary needed to describe reactive systems hierarchically, with explicit assemblies and controllers.</div>
+  </div>
+  <div class="pillar">
+    <div class="pillar-title">Configuration Semantics</div>
+    <div class="pillar-desc">Gives precise meaning to controller states, making semantics explicit instead of informal.</div>
+  </div>
+  <div class="pillar">
+    <div class="pillar-title">Correct-by-Construction</div>
+    <div class="pillar-desc">Guides incremental controller development so that correctness emerges during design, not after.</div>
+  </div>
+  <div class="pillar">
+    <div class="pillar-title">Compositional Verification</div>
+    <div class="pillar-desc">Establishes global correctness by combining locally verified results according to hierarchical organization.</div>
+  </div>
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2>The Structure of This Book</h2>
+
+<p>This tutorial follows the same philosophy as the PWS methodology itself: rather than presenting definitions in isolation, it accompanies you through the complete engineering process.</p>
+
+<h3>The Journey Ahead</h3>
+
+<p><strong>Part II — The PWS Model</strong> introduces the fundamental concepts: assemblies, components, controllers, and the notion of explicit interfaces. You will learn how to think about reactive systems as hierarchies of parts and wholes.</p>
+
+<p><strong>Part III — Configuration Semantics</strong> shows why controller states need explicit meaning. You will see how every state is associated with a set of configurations, and how this semantic foundation guides design.</p>
+
+<p><strong>Part IV — Designing Correct Controllers</strong> presents the Correct-by-Construction methodology. Rather than drawing controllers and hoping they are correct, you will learn to design them semantics-first, constructing behaviour incrementally while verification emerges.</p>
+
+<p><strong>Part V — Compositional Verification</strong> shows how hierarchical systems can be verified hierarchically. Instead of building a global state space that explodes exponentially, verification follows the same hierarchical decomposition as design.</p>
+
+<p><strong>Postface — Reflections</strong> steps back to consider what we have learned, and places PWS within the broader context of reactive system design.</p>
+
+<h3>Objective</h3>
+
+<p>The objective of this tutorial is not simply to explain the PWS formalism. Rather, it is to teach <strong>a systematic way of designing reactive controllers whose correctness progressively emerges from the design itself.</strong></p>
+
+<p>If you finish this book thinking differently about how controller states should be designed—if you find yourself asking</p>
+
+<blockquote style="text-align: center; border: none; background: transparent; padding: 0;">
+<p style="font-style: italic; color: var(--blue);"><strong>"What should this state mean?"</strong></p>
+<p style="margin: 0.5rem 0; color: #999;">rather than</p>
+<p style="font-style: italic; color: var(--blue);"><strong>"Which transition should I draw next?"</strong></p>
+</blockquote>
+
+<p>then this tutorial will have achieved its principal objective.</p>
+
+<hr>
+
+<p style="margin-top: 2.5rem; font-size: 0.95rem; color: #555; text-align: center;">
+The chapters that follow present a single, coherent vision of reactive system design: one in which modelling, semantics, construction, and verification are not separate concerns, but aspects of a unified methodology.
+</p>
+
+</div>
+</body>
+</html>

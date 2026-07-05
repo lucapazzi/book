@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part III — Configuration Semantics</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=Source+Code+Pro:wght@400;500&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --bg: #fafaf8;
+    --accent: #2d5016;
+    --accent-light: #e8f0e2;
+    --red: #8b1a1a;
+    --red-light: #fde8e8;
+    --blue: #1a3a6b;
+    --border: #d4d0c8;
+    --caption-bg: #f0ede6;
+    --code-bg: #f5f3ee;
+    --sidebar: #f0ede6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.72;
+    font-size: 17px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 3rem 2rem 5rem;
+  }
+
+  h1 {
+    font-size: 2.1rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  h1 .part {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  h2 {
+    font-size: 1.45rem;
+    font-weight: 700;
+    margin-top: 3rem;
+    margin-bottom: 1rem;
+    color: var(--text);
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 0.4rem;
+  }
+
+  h2 .num {
+    color: var(--accent);
+    margin-right: 0.3em;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 1.8rem;
+    margin-bottom: 0.6rem;
+    color: var(--blue);
+  }
+
+  p {
+    margin-bottom: 1rem;
+  }
+
+  strong { font-weight: 600; }
+
+  em { font-style: italic; }
+
+  code {
+    font-family: 'Source Code Pro', 'Menlo', monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+    color: var(--blue);
+  }
+
+  .label {
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .label-red {
+    font-weight: 600;
+    color: var(--red);
+  }
+
+  /* Opening paragraph of the chapter */
+  p.intro {
+    font-size: 1.04rem;
+    line-height: 1.78;
+    color: #2a2a3e;
+    border-left: 3px solid var(--blue);
+    padding-left: 1.2rem;
+    margin: 0.5rem 0 2rem;
+  }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-light);
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.95em;
+  }
+
+  blockquote p:last-child { margin-bottom: 0; }
+
+  .warning {
+    border-left: 3px solid var(--red);
+    background: var(--red-light);
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.95em;
+  }
+
+  figure {
+    margin: 2rem 0;
+    text-align: center;
+  }
+
+  figure img {
+    max-width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  figcaption {
+    margin-top: 0.8rem;
+    font-size: 0.88rem;
+    color: #555;
+    line-height: 1.55;
+    text-align: left;
+    background: var(--caption-bg);
+    padding: 0.7rem 1rem;
+    border-radius: 4px;
+    border-left: 3px solid var(--accent);
+  }
+
+  figcaption strong {
+    color: var(--text);
+  }
+
+  ul, ol {
+    margin: 0.8rem 0 1rem 1.5rem;
+  }
+
+  li {
+    margin-bottom: 0.4rem;
+  }
+
+  table {
+    border-collapse: collapse;
+    margin: 1rem 0 1.5rem;
+    font-size: 0.92em;
+    width: 100%;
+  }
+
+  th {
+    background: var(--accent-light);
+    font-weight: 600;
+    text-align: left;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid var(--border);
+  }
+
+  td {
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .dashboard-table {
+    width: auto;
+    margin: 1rem auto;
+  }
+
+  .dashboard-table td:first-child {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2.5rem 0;
+  }
+
+  .step-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.3rem 1rem;
+    margin: 1rem 0;
+  }
+
+  .step-num {
+    font-family: 'Source Code Pro', monospace;
+    font-weight: 500;
+    color: var(--accent);
+    font-size: 0.9em;
+  }
+
+  .toc {
+    background: var(--sidebar);
+    padding: 1.2rem 1.5rem;
+    border-radius: 6px;
+    margin: 2rem 0;
+  }
+
+  .toc-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 0.6rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .toc ol {
+    margin: 0;
+    padding-left: 1.2rem;
+  }
+
+  .toc li {
+    margin-bottom: 0.3rem;
+    font-size: 0.93rem;
+  }
+
+  .toc a {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .toc a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  .check-list {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .check-list li {
+    padding-left: 1.6rem;
+    position: relative;
+    margin-bottom: 0.6rem;
+  }
+
+  .check-list li::before {
+    content: "\2713";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .error-list {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .error-list li {
+    padding-left: 1.6rem;
+    position: relative;
+    margin-bottom: 0.6rem;
+  }
+
+  .error-list li::before {
+    content: "\26A0";
+    position: absolute;
+    left: 0;
+    color: var(--red);
+  }
+
+  .keyboard {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.82em;
+    background: #e8e6e0;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 0.1em 0.45em;
+    box-shadow: 0 1px 0 #b0ada6;
+  }
+
+  .eq {
+    text-align: center;
+    font-size: 1.15em;
+    margin: 1rem 0 1.2rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .constraint {
+    text-align: center;
+    font-size: 1em;
+    margin: 1rem 0;
+    background: var(--code-bg);
+    padding: 0.8rem;
+    border-radius: 4px;
+    font-family: 'Source Code Pro', monospace;
+  }
+
+  /* Formal / mathematical highlight block */
+  .formal {
+    background: rgba(45, 80, 22, 0.04);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .formal p { margin-bottom: 0.7rem; }
+  .formal p:last-child { margin-bottom: 0; }
+  .formal code { background: rgba(255, 255, 255, 0.7); }
+
+  .formal .computational-model {
+    border-top: 1px solid var(--accent);
+    border-bottom: 1px solid var(--accent);
+    padding: 0.8rem 0;
+    margin: 0.3rem 0 1rem;
+    background: transparent;
+  }
+
+  .example {
+    border-left: 4px solid #1a3a6b;
+    background: #f0f5ff;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .example p:last-child { margin-bottom: 0; }
+
+  .diagram-notation {
+    border-left: 4px solid #8b1a1a;
+    background: #fef0f0;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .diagram-notation p:last-child { margin-bottom: 0; }
+
+  .note {
+    border-left: 4px solid #1a5ab8;
+    background: #f0f8ff;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .note p:last-child { margin-bottom: 0; }
+
+  .epigraph {
+    font-style: italic;
+    color: #3a3a4a;
+    text-align: center;
+    margin: 2rem 0;
+    padding: 1rem;
+    border-top: 2px solid var(--accent);
+    border-bottom: 2px solid var(--accent);
+  }
+
+  .contract-box {
+    border-left: 4px solid var(--accent);
+    background: #f9fbf7;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .contract-box p:last-child { margin-bottom: 0; }
+
+  .hierarchy-tree {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #fafaf8;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+  }
+
+  .cycle-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 1.2rem 0;
+  }
+
+  .cycle-list li {
+    padding-left: 1.8rem;
+    position: relative;
+    margin-bottom: 0.8rem;
+    font-size: 0.98rem;
+  }
+
+  .cycle-list li::before {
+    content: attr(data-step);
+    position: absolute;
+    left: 0;
+    display: inline-block;
+    width: 1.4rem;
+    height: 1.4rem;
+    background: var(--accent);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 1.4rem;
+  }
+
+  .color-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin-right: 4px;
+    vertical-align: middle;
+    border: 1px solid rgba(0,0,0,0.15);
+  }
+
+  .green { background: #2d8b2d; }
+  .red { background: #c62828; }
+  .gold { background: #c8a600; }
+  .grey { background: #999; }
+  .blue-s { background: #1a5ab8; }
+  .amber { background: #e6a800; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>
+  <span class="part">Part III — Configuration Semantics</span>
+  Giving Meaning to Controller States
+</h1>
+
+<p class="intro">
+Part II established the structure of a PWS system: an Assembly of controlled components and a controller that observes and issues commands. But one essential question remained open: <strong>what does a controller state actually mean?</strong> Classical finite-state machines leave this question to the designer's imagination. PWS makes it explicit. Instead of relying on informal names, each controller state is associated with a precise set of Assembly configurations. This part introduces the formal semantics that enables the Correct-by-Construction methodology, and explores how autonomous behaviour constrains this semantics.
+</p>
+
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <ol>
+    <li><a href="#s1">Why controller states need a semantics</a></li>
+    <li><a href="#s2">Specified semantics</a></li>
+    <li><a href="#s3">Obtained semantics</a></li>
+    <li><a href="#s4">Computing configurations</a></li>
+    <li><a href="#s5">Autonomous behaviour</a></li>
+    <li><a href="#s6">The reactive space</a></li>
+  </ol>
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s1"><span class="num">1.</span> Why controller states need a semantics</h2>
+
+<p>So far we have described the controller as an ordinary finite-state machine. States, transitions, guards, and actions define its behaviour. However, an important question remains unanswered:</p>
+
+<blockquote>
+<p><strong>What does a controller state actually mean?</strong></p>
+</blockquote>
+
+<p>In classical finite-state machines, the meaning of a state is usually left to the designer. A state named <code>Working</code> or <code>Ready</code> suggests an interpretation, but this interpretation exists only informally. Different designers may associate slightly different meanings with the same name. This ambiguity is harmless in systems designed for informal reasoning, but it becomes costly when formal verification is required.</p>
+
+<p>PWS adopts a different approach. Instead of assigning only a textual interpretation, <strong>each controller state is associated with a precise set of Assembly configurations.</strong> Consequently, the semantics of a controller state becomes explicit and mathematically verifiable.</p>
+
+<blockquote>
+<p>The shift is profound: semantics moves from the designer's notes into the formal model itself. What was once implicit becomes explicit, and what was once unverifiable becomes subject to systematic analysis.</p>
+</blockquote>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s2"><span class="num">2.</span> Specified semantics</h2>
+
+<p>The first step in designing a PWS controller consists in declaring the intended meaning of each controller state. This meaning is expressed as a constraint over the states of the controlled components, using the same dot notation we introduced for guards: <code>component.state</code> means "the state of <code>component</code> is <code>state</code>".</p>
+
+<div class="example">
+<p><strong>Example: Cover–Laser Assembly</strong></p>
+
+<p>Consider a simple Cover–Laser assembly. The controller state <code>Working</code> might be specified by the constraint:</p>
+
+<div class="constraint">
+<code>laser.On</code> ∧ <code>cover.Closed</code>
+</div>
+
+<p>This constraint expresses the designer's intention: whenever the controller is in state <code>Working</code>, the Assembly must be in a configuration where the laser is on <em>and</em> the cover is closed. (Recall that <code>laser.On</code> is shorthand for "laser equals On", and similarly <code>cover.Closed</code> means "cover equals Closed".) Notice that this logical AND corresponds to a single Assembly configuration—specifically, the pair <code>(Closed, On)</code> as we enumerated in Section&nbsp;7 of Part II. The constraint is a formal statement of which Assembly configurations are admissible while the controller occupies this state. It specifies what Assembly conditions the controller state is supposed to represent and enforce. For this reason, we call it the <span class="label">specified semantics</span>.</p>
+</div>
+
+<p>The specified semantics therefore acts as a <strong>behavioural contract</strong> associated with the controller state. It makes the designer's expectations explicit before implementation begins.</p>
+
+<h3>Design Philosophy</h3>
+
+<p>This approach reverses the traditional workflow of finite-state machine design:</p>
+
+<ul>
+  <li><strong>Traditional approach:</strong> design first, verify afterwards.</li>
+  <li><strong>PWS approach:</strong> specify the semantics first, then design the controller to match it.</li>
+</ul>
+
+<p>During controller design, every transition must preserve this contract. The specified semantics therefore guides the design itself, rather than being imposed after the controller is complete. This is the foundation of the Correct-by-Construction methodology.</p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s3"><span class="num">3.</span> Obtained semantics</h2>
+
+<p>Declaring the intended semantics is only the first step. The controller, together with the Assembly, actually generates a possibly larger set of reachable configurations. These configurations constitute the <span class="label">obtained semantics</span>.</p>
+
+<p>Unlike the specified semantics, which is chosen by the designer, the obtained semantics is <strong>computed from the controller structure</strong>. It represents the actual behaviour of the system: the configurations the controller can actually reach, given the Assembly's rules and the controller's transitions and guards.</p>
+
+<p>Verification consists in comparing these two sets:</p>
+
+<blockquote>
+<p><strong>Ideal situation:</strong> obtained semantics = specified semantics.</p>
+</blockquote>
+
+<p>Two kinds of mismatch can arise. Whenever the obtained semantics contains additional configurations that were not part of the specification, the controller admits behaviours that were not intended; such situations reveal design flaws. Conversely, if the obtained semantics is a strict subset of the specified semantics, the controller is overly restrictive—it never reaches some intended configurations.</p>
+
+<blockquote>
+<p>The goal of Correct-by-Construction design is to progressively refine the controller until these two sets coincide.</p>
+</blockquote>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s4"><span class="num">4.</span> Computing configurations</h2>
+
+<p>How is the obtained semantics computed? PWS adopts an inductive construction that mirrors the controller structure. Before giving the procedure, we fix the object it manipulates.</p>
+
+<div class="formal">
+<p>An Assembly configuration can be viewed as a <strong>possible world</strong>: a valuation with as many propositions as there are machines in the Assembly, each proposition fixed to the state actually occupied by its machine.</p>
+</div>
+
+<p>A controller state <code>s</code> is associated with a set of Assembly configurations—the configurations the Assembly may assume whenever the controller is in <code>s</code>. These are the <strong>possible configurations</strong> of <code>s</code>; during execution the system occupies exactly one of them at a time. Correct-by-Construction (CbC) design identifies all and only the possible configurations of every state, through the inductive procedure below. At its base lie the initial configurations of the Assembly, computed from the fact that each machine starts out in one—or possibly several—initial states.</p>
+
+<div class="formal">
+<div class="computational-model">
+<p><strong>Computational Model</strong></p>
+<p>For each controller state <code>s</code>, we compute <code>Conf(s)</code> inductively:</p>
+<p>1. <strong>Base Step:</strong> collect all possible initial configurations into <code>Conf(Init)</code>.</p>
+<p>2. <strong>Inductive Step:</strong> for each transition <code>s → t</code> in the controller, every configuration in <code>Conf(s)</code> is transformed (subject to guards and component capabilities), and the resulting configurations are <em>accumulated</em> into <code>Conf(t)</code>.</p>
+<p>3. <strong>Final result:</strong> after all transitions have been processed, the final <code>Conf(s)</code> for each state <code>s</code> represents the <em>obtained semantics</em>—the actual configurations the system can reach.</p>
+</div>
+
+<p><strong>Notation.</strong> <code>Sem(s)</code> denotes the <em>specified</em> semantics (declared by the designer); <code>Conf(s)</code> denotes the <em>obtained</em> semantics (computed from the controller structure). Verification checks that <code>Conf(s)</code> ⊆ <code>Sem(s)</code>—that the system never leaves the configurations the designer admits.</p>
+</div>
+
+<p>The set of configurations associated with each controller state is transmitted to other states through the transitions of the controller. If the controller moves from <code>s</code> to <code>t</code> without directing any action toward the Assembly, <code>t</code> inherits the same set of configurations as <code>s</code>—together with whatever is contributed by every other state entering <code>t</code>. If the transition does carry actions, some configurations are transformed into other configurations; these may already belong to the target state's set, or may not, in which case they are added to it.</p>
+
+<h3>Base Step</h3>
+
+<p>The initial controller state is associated with the initial Assembly configuration, formed by combining the initial states of all controlled components. For the Cover–Laser example, suppose the controller begins in state <code>Init</code>. Unlike a laboratory setting where we can guarantee exact initial conditions, a real system may not know the initial state of each component: the cover might be either <code>Open</code> or <code>Closed</code> when the system starts (we do not control which), and likewise the laser might be either <code>Off</code> or <code>On</code>.</p>
+
+<p>This uncertainty creates multiple possible initial configurations. Rather than assuming a single initial state, the Base Step must account for all possible combinations of initial component states. Formally, the initial conditions can be expressed as:</p>
+
+<div class="formal">
+<p><code>(cover.Open ∨ cover.Closed) ∧ (laser.Off ∨ laser.On)</code></p>
+<p>Expanding this expression to canonical form (Disjunctive Normal Form), we obtain four disjuncts:</p>
+<p><code>(cover.Open ∧ laser.Off) ∨ (cover.Open ∧ laser.On) ∨ (cover.Closed ∧ laser.Off) ∨ (cover.Closed ∧ laser.On)</code></p>
+<p>Each disjunct corresponds to one initial configuration. This is the canonical form derived from the product of possible component states.</p>
+</div>
+
+<p>For the Cover–Laser assembly, there are therefore four possible initial configurations:</p>
+
+<ol style="margin: 1rem 0 1.2rem 1.5rem;">
+  <li><code>(Open, Off)</code> — corresponds to <code>(cover.Open ∧ laser.Off)</code></li>
+  <li><code>(Open, On)</code> — corresponds to <code>(cover.Open ∧ laser.On)</code></li>
+  <li><code>(Closed, Off)</code> — corresponds to <code>(cover.Closed ∧ laser.Off)</code></li>
+  <li><code>(Closed, On)</code> — corresponds to <code>(cover.Closed ∧ laser.On)</code></li>
+</ol>
+
+<p>All four configurations are added to <code>Conf(Init)</code>, establishing the starting point of the inductive construction. This multiplication of configurations—from two possible states of the cover times two possible states of the laser—illustrates why real systems must account for all possible initial conditions, not just the "happy path" scenario.</p>
+
+<h3>Inductive Step</h3>
+
+<p>Suppose the semantics of controller state <code>X</code> has already been computed. Consider one outgoing controller transition:</p>
+
+<div class="constraint">X → Y</div>
+
+<p>This transition is associated with <strong>actions</strong>—commands sent to the controlled components (e.g., <code>&lt;laser.on&gt;</code>, <code>&lt;cover.unlock&gt;</code>). For each configuration <code>c</code> in <code>Conf(X)</code>, the transformation proceeds as follows:</p>
+
+<ol style="margin: 0.8rem 0 0.8rem 1.5rem;">
+  <li>Apply the actions associated with the transition to the components in configuration <code>c</code>.</li>
+  <li>Each action induces a state change in the targeted component (e.g., issuing <code>&lt;laser.on&gt;</code> transforms a laser in state <code>Off</code> into state <code>On</code>).</li>
+  <li>The result is a new configuration <code>c'</code> reflecting the component state changes.</li>
+  <li>Add <code>c'</code> to <code>Conf(Y)</code>.</li>
+</ol>
+
+<p>Not all actions succeed on all components. If a component's interface does not include the requested command, the action fails and the configuration remains unchanged. This reflects a real-world principle: <em>the controller proposes; the component disposes.</em></p>
+
+<h3>Configuration Accumulation</h3>
+
+<p>A critical aspect of the inductive construction is that configurations are <strong>accumulated</strong>, not replaced. When step 4 of the Inductive Step adds a new configuration <code>c'</code> to <code>Conf(Y)</code>, it does not overwrite the existing configurations in that set. Instead, the new configuration is combined with any configurations already present. Formally:</p>
+
+<div class="constraint">
+Conf(Y) := Conf(Y) ∪ {c'}
+</div>
+
+<p>This distinction matters because a controller state <code>Y</code> might receive configurations from several different predecessor states <code>X₁, X₂, X₃, …</code> through different incoming transitions. Each transition contributes its own transformed configurations, and all of them are merged into <code>Conf(Y)</code>.</p>
+
+<div class="example">
+<p><strong>Example: accumulation from two predecessors.</strong> Suppose the controller has states <code>Idle</code> and <code>Working</code>. During the first iteration, a transition <code>Idle → Working</code> issues the action <code>&lt;laser.on&gt;</code>. This transforms configurations <code>(Closed, Off)</code> and <code>(Open, Off)</code> into <code>(Closed, On)</code> and <code>(Open, On)</code>, which are added to <code>Conf(Working)</code>. Later, another transition (perhaps from a <code>Standby</code> state) reaches <code>Working</code> and contributes the configuration <code>(Closed, Off)</code>. This configuration is accumulated, so:</p>
+<p style="text-align: center; font-weight: 600; margin: 0.8rem 0 0;"><code>Conf(Working) = {(Closed, On), (Open, On), (Closed, Off)}</code></p>
+</div>
+
+<p>The inductive procedure repeats over every transition in the controller until no new configurations are added to any state. This iteration reaches a <strong>fixed point</strong>: a state where <code>Conf(s)</code> no longer changes for any state <code>s</code>. At this point, the inductive construction terminates, and the final <code>Conf(s)</code> for each state represents the <strong>obtained semantics</strong>—the complete set of reachable configurations.</p>
+
+<p>The existence and computability of this fixed point rests on a fundamental property: the operation of adding configurations to states is <strong>monotone</strong>. In each iteration we only add configurations to <code>Conf(s)</code>; we never remove them. This means the sequence <code>Conf₀(s) ⊆ Conf₁(s) ⊆ Conf₂(s) ⊆ …</code> forms a monotonically increasing chain of sets. By <strong>Tarski's fixed-point theorem</strong>, any monotone function over a partially ordered set (here, the lattice of configuration sets) must have a least fixed point. Consequently, the inductive procedure is guaranteed to terminate and reach the minimal fixed point—the smallest set of configurations consistent with all controller transitions.</p>
+
+<blockquote>
+<p>This inductive process mirrors how the controller actually evolves: by examining each possible transition from each reachable state, we discover all configurations the controller can reach.</p>
+</blockquote>
+
+<h3>Configurations as Possible Worlds</h3>
+
+<p>The construction above admits an equivalent reading in terms of <strong>possible worlds</strong>, a notion familiar from modal logic and already anticipated at the start of this section. Recall that a configuration is a valuation assigning to each machine of the Assembly the state it currently occupies; under this reading, a configuration simply <em>is</em> a possible world, and <code>Conf(s)</code> is the set of worlds accessible from controller state <code>s</code>—the worlds the Assembly may inhabit whenever the controller sits in <code>s</code>.</p>
+
+<p>The Base Step populates <code>Conf(Init)</code> with every world consistent with the (possibly uncertain) initial state of each machine—exactly the worlds satisfying the initial formula, expressed earlier in Disjunctive Normal Form as a disjunction of fully specified worlds.</p>
+
+<p>Each controller transition <code>s → t</code> then plays the role of an accessibility relation between worlds. When the transition carries no action, it behaves as the identity relation: every world accessible from <code>s</code> is also accessible from <code>t</code>, so <code>Conf(t)</code> inherits <code>Conf(s)</code> unchanged (merged, as always, with whatever other predecessor states contribute). When the transition carries actions, it relates each world <code>c</code> in <code>Conf(s)</code> to the world <code>c'</code> obtained by updating the valuation of the targeted machines; <code>c'</code> is added to <code>Conf(t)</code> whether or not it was already present, since configurations accumulate rather than replace one another.</p>
+
+<p>Read this way, the inductive construction is the standard modal-logic image operation: <code>Conf(t)</code> is the union, over every incoming transition, of the image of the source state's configurations under that transition's accessibility relation. The fixed point reached at the end of the procedure is the smallest set of worlds closed under all these relations—precisely the worlds the controller can force the Assembly into, state by state.</p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s5"><span class="num">5.</span> Autonomous behaviour</h2>
+
+<p>So far, we have considered only controller-triggered behaviour. Real systems, however, evolve autonomously. Sensors change state. Doors move. Temperatures increase. Timeouts expire. These autonomous transitions modify the Assembly even when the controller remains in the same state.</p>
+
+<p>Consequently, the semantics of controller states cannot ignore autonomous evolution. The presence of autonomous transitions introduces a new constraint on the semantics:</p>
+
+<blockquote>
+<p><strong>The semantics of a controller state must remain valid even as the Assembly evolves autonomously.</strong></p>
+</blockquote>
+
+<p>This simple observation is central to understanding why PWS requires the concepts introduced in the next section.</p>
+
+<h3>Autonomous Evolution as a Move Between Possible Worlds</h3>
+
+<p>In the possible-worlds reading introduced earlier, an autonomous evolution is a move from one possible world to another: the world <code>c</code> the Assembly actually occupies—an element of <code>Conf(s)</code>—is transformed by an autonomous transition into a different world <code>c'</code>. Nothing guarantees that <code>c'</code> is among the worlds the specification expects: <code>Sem(s)</code> only lists the worlds the designer admits and looks for in state <code>s</code>, and autonomous evolution is free to carry the Assembly into a world <code>c'</code> that falls outside that set.</p>
+
+<p>When <code>c'</code> is not in <code>Sem(s)</code>, the controller state and the actual world are no longer consistent—precisely the situation the Cover–Laser example in the next section will make concrete. This inconsistency is what triggers a controller transition in response. Crucially, that reaction need not simply accept <code>c'</code> as it stands: like any controller transition, it may carry actions of its own, and so it can transform <code>c'</code> further, into a world <code>c''</code>—possibly different from <code>c'</code>—which is the world the Assembly ends up in once the controller has reacted.</p>
+
+<p>Read this way, autonomous behaviour and controller reaction compose two successive moves between possible worlds: an uncontrolled move <code>c → c'</code>, driven by the Assembly itself, followed by a controlled move <code>c' → c''</code>, driven by the controller's reactive transition. Section&nbsp;6 studies exactly how this second move is computed, and what it takes for the controller to guarantee that such a reaction always exists.</p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s6"><span class="num">6.</span> The reactive space</h2>
+
+<p>Suppose the controller is currently in state <code>Working</code>, whose specified semantics requires:</p>
+
+<div class="constraint">
+<code>laser.On</code> ∧ <code>cover.Closed</code>
+</div>
+
+<p>Equivalently, in tuple notation: <code>(Closed, On)</code>. Now suppose that the cover autonomously changes from <code>Closed</code> to <code>Open</code>. Immediately after this autonomous transition, the controller is still in state <code>Working</code>, while the Assembly configuration has become:</p>
+
+<div class="constraint">
+<code>laser.On</code> ∧ <code>cover.Open</code>
+</div>
+
+<p>Equivalently, in tuple notation: <code>(Open, On)</code>.</p>
+
+<p>The controller state and the Assembly configuration are <strong>no longer consistent.</strong> The Assembly has moved outside the semantics of the controller state.</p>
+
+<p>This observation motivates one of the central ideas of the PWS methodology:</p>
+
+<blockquote>
+<p><strong>Whenever autonomous behaviour moves the Assembly outside the semantics of the current controller state, the controller must react by moving to another state whose semantics is compatible with the new configuration.</strong></p>
+</blockquote>
+
+<p>The set of configurations to which the Assembly can move autonomously from the current controller state—and for which a suitable controller reaction exists—is called the <span class="label">Reactive Space</span>. Understanding reactive spaces, and ensuring they are properly handled, is the key to building controllers that remain correct despite autonomous evolution.</p>
+
+<h3>What Lies Ahead</h3>
+
+<p>The formal treatment of reactive spaces, and the mechanisms the controller must employ to handle them correctly, constitute the foundation of the Correct-by-Construction methodology. This is the subject of Part&nbsp;IV.</p>
+
+<p>For now, it suffices to note that by introducing explicit semantics we have identified a new and unavoidable constraint on controller design: the controller must not only reach its intended configurations, but must remain responsive to autonomous behaviour that might move the Assembly beyond its current state's semantics.</p>
+
+<blockquote>
+<p>This is the first time in this book that we have encountered a design problem that cannot be solved by applying the guard-and-transition logic of a classical state machine. It is this problem that Correct-by-Construction design, and the PWSEditor tool, are built to solve.</p>
+</blockquote>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part IV — Designing Correct Controllers</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=Source+Code+Pro:wght@400;500&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --bg: #fafaf8;
+    --accent: #2d5016;
+    --accent-light: #e8f0e2;
+    --red: #8b1a1a;
+    --red-light: #fde8e8;
+    --blue: #1a3a6b;
+    --border: #d4d0c8;
+    --caption-bg: #f0ede6;
+    --code-bg: #f5f3ee;
+    --sidebar: #f0ede6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.72;
+    font-size: 17px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 3rem 2rem 5rem;
+  }
+
+  h1 {
+    font-size: 2.1rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  h1 .part {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  h2 {
+    font-size: 1.45rem;
+    font-weight: 700;
+    margin-top: 3rem;
+    margin-bottom: 1rem;
+    color: var(--text);
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 0.4rem;
+  }
+
+  h2 .num {
+    color: var(--accent);
+    margin-right: 0.3em;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 1.8rem;
+    margin-bottom: 0.6rem;
+    color: var(--blue);
+  }
+
+  p {
+    margin-bottom: 1rem;
+  }
+
+  p.intro {
+    font-size: 1.02rem;
+    line-height: 1.78;
+    color: #2a2a3e;
+    margin-bottom: 1.4rem;
+  }
+
+  strong { font-weight: 600; }
+
+  em { font-style: italic; }
+
+  code {
+    font-family: 'Source Code Pro', 'Menlo', monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+    color: var(--blue);
+  }
+
+  .label {
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .label-red {
+    font-weight: 600;
+    color: var(--red);
+  }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-light);
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.95em;
+  }
+
+  blockquote p:last-child { margin-bottom: 0; }
+
+  blockquote strong { color: var(--text); }
+
+  .warning {
+    border-left: 3px solid var(--red);
+    background: var(--red-light);
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.95em;
+  }
+
+  figure {
+    margin: 2rem 0;
+    text-align: center;
+  }
+
+  figure img {
+    max-width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  figcaption {
+    margin-top: 0.8rem;
+    font-size: 0.88rem;
+    color: #555;
+    line-height: 1.55;
+    text-align: left;
+    background: var(--caption-bg);
+    padding: 0.7rem 1rem;
+    border-radius: 4px;
+    border-left: 3px solid var(--accent);
+  }
+
+  figcaption strong {
+    color: var(--text);
+  }
+
+  ul, ol {
+    margin: 0.8rem 0 1rem 1.5rem;
+  }
+
+  li {
+    margin-bottom: 0.4rem;
+  }
+
+  .cycle-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 1.2rem 0;
+  }
+
+  .cycle-list li {
+    padding-left: 1.8rem;
+    position: relative;
+    margin-bottom: 0.8rem;
+    font-size: 0.98rem;
+  }
+
+  .cycle-list li::before {
+    content: attr(data-step);
+    position: absolute;
+    left: 0;
+    display: inline-block;
+    width: 1.4rem;
+    height: 1.4rem;
+    background: var(--accent);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 1.4rem;
+  }
+
+  table {
+    border-collapse: collapse;
+    margin: 1rem 0 1.5rem;
+    font-size: 0.92em;
+    width: 100%;
+  }
+
+  th {
+    background: var(--accent-light);
+    font-weight: 600;
+    text-align: left;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid var(--border);
+  }
+
+  td {
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .dashboard-table {
+    width: auto;
+    margin: 1rem auto;
+  }
+
+  .dashboard-table td:first-child {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2.5rem 0;
+  }
+
+  .toc {
+    background: var(--sidebar);
+    padding: 1.2rem 1.5rem;
+    border-radius: 6px;
+    margin: 2rem 0;
+  }
+
+  .toc-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 0.6rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .toc ol {
+    margin: 0;
+    padding-left: 1.2rem;
+  }
+
+  .toc li {
+    margin-bottom: 0.3rem;
+    font-size: 0.93rem;
+  }
+
+  .toc a {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .toc a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  .check-list {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .check-list li {
+    padding-left: 1.6rem;
+    position: relative;
+    margin-bottom: 0.6rem;
+  }
+
+  .check-list li::before {
+    content: "\2713";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .constraint {
+    text-align: center;
+    font-size: 1em;
+    margin: 1rem 0;
+    background: var(--code-bg);
+    padding: 0.8rem;
+    border-radius: 4px;
+    font-family: 'Source Code Pro', monospace;
+  }
+
+  .epigraph {
+    font-style: italic;
+    color: #3a3a4a;
+    text-align: center;
+    margin: 2rem 0;
+    padding: 1rem;
+    border-top: 2px solid var(--accent);
+    border-bottom: 2px solid var(--accent);
+  }
+
+
+  .example {
+    border-left: 4px solid #1a3a6b;
+    background: #f0f5ff;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .example p:last-child { margin-bottom: 0; }
+
+  .formal {
+    border-left: 4px solid #2d5016;
+    background: #f5faf0;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+    font-family: 'Source Code Pro', monospace;
+  }
+
+  .formal p:last-child { margin-bottom: 0; }
+
+  .formal .computational-model {
+    border-top: 1px solid var(--accent);
+    border-bottom: 1px solid var(--accent);
+    padding: 0.8rem 0;
+    margin: 1rem 0;
+    background: rgba(45, 80, 22, 0.03);
+  }
+
+  .diagram-notation {
+    border-left: 4px solid #8b1a1a;
+    background: #fef0f0;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .diagram-notation p:last-child { margin-bottom: 0; }
+
+  .note {
+    border-left: 4px solid #1a5ab8;
+    background: #f0f8ff;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .note p:last-child { margin-bottom: 0; }
+
+  .contract-box {
+    border-left: 4px solid var(--accent);
+    background: #f9fbf7;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .contract-box p:last-child { margin-bottom: 0; }
+
+  .hierarchy-tree {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #fafaf8;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+  }
+
+  .step-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.3rem 1rem;
+    margin: 1rem 0;
+  }
+
+  .step-num {
+    font-family: 'Source Code Pro', monospace;
+    font-weight: 500;
+    color: var(--accent);
+    font-size: 0.9em;
+  }
+
+  .eq {
+    text-align: center;
+    font-size: 1.15em;
+    margin: 1rem 0 1.2rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .intro {
+    font-size: 1.05em;
+    color: #333;
+    border-left: 3px solid var(--blue);
+    padding-left: 1.2rem;
+    margin: 1.5rem 0 2rem;
+  }
+
+  .keyboard {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.82em;
+    background: #e8e6e0;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 0.1em 0.45em;
+    box-shadow: 0 1px 0 #b0ada6;
+  }
+
+  .color-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin-right: 4px;
+    vertical-align: middle;
+    border: 1px solid rgba(0,0,0,0.15);
+  }
+
+  .green { background: #2d8b2d; }
+  .red { background: #c62828; }
+  .gold { background: #c8a600; }
+  .grey { background: #999; }
+  .blue-s { background: #1a5ab8; }
+  .amber { background: #e6a800; }
+
+  .error-list {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .error-list li {
+    padding-left: 1.6rem;
+    position: relative;
+    margin-bottom: 0.6rem;
+  }
+
+  .error-list li::before {
+    content: "\26A0";
+    position: absolute;
+    left: 0;
+    color: var(--red);
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>
+  <span class="part">Part IV — Designing Correct Controllers</span>
+  A Correct-by-Construction Methodology
+</h1>
+
+<p class="intro">
+Part III showed how each controller state carries explicit semantics: a set of Assembly configurations it is supposed to represent. But how does the designer actually build a controller that matches this semantics? Part II and III posed the problem; this part provides the solution. Rather than designing first and verifying afterwards, the PWS methodology inverts the process: semantics guides design from the start. The controller emerges as the mechanism that realizes intended semantic properties, not as a finished artifact to be validated. This is the Correct-by-Construction philosophy.
+</p>
+
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <ol>
+    <li><a href="#s1">From behaviour to semantics</a></li>
+    <li><a href="#s2">Declaring the intended behaviour</a></li>
+    <li><a href="#s3">Constructing behaviour</a></li>
+    <li><a href="#s4">The design cycle</a></li>
+    <li><a href="#s5">Autonomous evolution</a></li>
+    <li><a href="#s6">Semantic repair</a></li>
+    <li><a href="#s7">Reactive spaces</a></li>
+    <li><a href="#s8">Well-formed controllers</a></li>
+  </ol>
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s1"><span class="num">1.</span> From behaviour to semantics</h2>
+
+<p class="epigraph">A controller is not designed by drawing states. It is designed by progressively realizing their intended semantics.</p>
+
+<p>Traditional state-machine design usually follows a well-established pattern:</p>
+
+<ol>
+  <li>Draw states and transitions.</li>
+  <li>Complete the behaviour description.</li>
+  <li>Afterwards, ask whether the resulting system satisfies the intended requirements.</li>
+</ol>
+
+<p>This workflow separates design from verification: behaviour comes first, correctness comes later.</p>
+
+<p>PWS follows the opposite philosophy. <strong>The meaning of every controller state is declared before the controller itself is completed.</strong> The semantics therefore becomes the primary design artifact. The controller is merely the mechanism used to realize that semantics.</p>
+
+<blockquote>
+<p><strong>This inversion of perspective is the key idea underlying Correct-by-Construction.</strong> Design and verification are no longer separate phases. They become integrated into a single iterative process where semantic constraints guide every design decision.</p>
+</blockquote>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s2"><span class="num">2.</span> Declaring the intended behaviour</h2>
+
+<p>The design process begins with a crucial step: <strong>associating every controller state with its specified semantics.</strong></p>
+
+<p>These semantic constraints describe which Assembly configurations are considered compatible with each controller state. For a Cover–Laser assembly, for example:</p>
+
+<ul>
+  <li>The <code>Idle</code> state might specify <code>(laser.Off, cover.Closed)</code> — where <code>laser.Off</code> means "laser equals Off" and <code>cover.Closed</code> means "cover equals Closed"</li>
+  <li>The <code>Ready</code> state might specify <code>(laser.Off, cover.Open)</code></li>
+  <li>The <code>Working</code> state might specify <code>(laser.On, cover.Closed)</code></li>
+</ul>
+
+<p>At this stage, the controller may still contain very few transitions. The objective is not yet to describe the behaviour in detail. Instead, it is to <strong>describe the intended meaning of each state.</strong> The semantics acts as a behavioural contract: a promise that certain configurations will be reached and others will be avoided.</p>
+
+<blockquote>
+<p>This declaration marks a profound shift in design methodology. The designer is forced to be explicit about what each state means <em>before</em> implementing the transitions that lead to it.</p>
+</blockquote>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s3"><span class="num">3.</span> Constructing behaviour</h2>
+
+<p>Once the intended semantics has been declared, controller transitions are progressively introduced.</p>
+
+<p>Each transition contributes new Assembly configurations to its destination state. Consequently, <strong>controller transitions are not merely graphical connections.</strong> Each transition represents a semantic transformation: it expands the set of configurations reachable in the destination state.</p>
+
+<p>After every design step, the obtained semantics can be recomputed. The designer immediately observes the semantic consequences of the newly introduced transition. Design therefore becomes <strong>an iterative dialogue between the controller structure and its semantics.</strong></p>
+
+<p>Instead of completing a design and then discovering violations of requirements, the designer learns the consequences of each choice as soon as it is made. Semantic inconsistencies are detected early, when modifications are still easy to introduce.</p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s4"><span class="num">4.</span> The design cycle</h2>
+
+<p>The complete Correct-by-Construction methodology can be summarized by a simple iterative process:</p>
+
+<ol class="cycle-list" data-step="1">
+  <li data-step="1"><strong>Specify</strong> the intended semantics for each controller state.</li>
+  <li data-step="2"><strong>Construct</strong> controller transitions that drive the Assembly.</li>
+  <li data-step="3"><strong>Compute</strong> the obtained semantics from the controller structure.</li>
+  <li data-step="4"><strong>Compare</strong> obtained and specified semantics.</li>
+  <li data-step="5"><strong>Identify</strong> semantic inconsistencies and unintended behaviours.</li>
+  <li data-step="6"><strong>Introduce</strong> repair transitions to handle unexpected evolution.</li>
+  <li data-step="7"><strong>Verify</strong> the local obligations governing reactive behaviour.</li>
+  <li data-step="8"><strong>Repeat</strong> until both semantics coincide.</li>
+</ol>
+
+<blockquote>
+<p><strong>Correctness is therefore not verified after design. It progressively emerges during design.</strong> This design philosophy constitutes the central contribution of the PWS methodology.</p>
+</blockquote>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s5"><span class="num">5.</span> Autonomous evolution</h2>
+
+<p>Real systems continue to evolve even when the controller remains in the same state. Sensors change value. Mechanical devices move. Timeouts expire. Environmental conditions vary.</p>
+
+<p>These autonomous transitions may invalidate the semantics associated with the current controller state. We have already encountered this problem in Part III: the Cover might autonomously change from <code>Closed</code> to <code>Open</code> while the controller is still in a state that expects <code>cover.Closed</code>.</p>
+
+<p>Autonomous evolution creates a new design requirement. The controller must accomplish <strong>two different tasks:</strong></p>
+
+<ul>
+  <li><strong>Drive:</strong> Actively move the Assembly towards its intended behaviour.</li>
+  <li><strong>React:</strong> Continuously respond to autonomous changes that may compromise semantic consistency.</li>
+</ul>
+
+<p>A controller that only drives but does not react will not remain correct in the presence of autonomous evolution. Conversely, a controller that only reacts but cannot drive will never make progress towards its goals. Both capabilities are essential.</p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s6"><span class="num">6.</span> Semantic repair</h2>
+
+<p>Whenever autonomous evolution produces an Assembly configuration that no longer belongs to the semantics of the current controller state, the controller must react.</p>
+
+<p>Its objective is not simply to execute another transition. <strong>Its objective is to restore consistency between</strong></p>
+
+<ul>
+  <li><strong>the current controller state,</strong> and</li>
+  <li><strong>the current Assembly configuration.</strong></li>
+</ul>
+
+<p>Controller transitions triggered by observed state changes therefore become <span class="label">semantic repair mechanisms.</span> The controller continuously maintains the correspondence between its own state and the actual state of the Assembly.</p>
+
+<p>This is a fundamentally different role from the driving transitions discussed earlier. Repair transitions are reactive: they respond to events, not to the designer's intention to progress. They restore an invariant that must hold at all times: <em>every reachable configuration must belong to the semantics of the current controller state.</em></p>
+
+<blockquote>
+<p>Design complexity increases significantly when repair transitions must be introduced. The designer can no longer assume that the controller can ignore autonomous changes. Every controller state must account for all possible autonomous evolution.</p>
+</blockquote>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s7"><span class="num">7.</span> Reactive spaces</h2>
+
+<p>Reactive behaviour naturally introduces a new concept: the <span class="label">Reactive Space</span> of a controller state.</p>
+
+<p>For a controller state <code>X</code>, the Reactive Space consists of <strong>all Assembly configurations that become reachable through autonomous evolution while the controller still remains in <code>X</code>.</strong></p>
+
+<p>Some of these configurations remain compatible with the specified semantics of <code>X</code>. Others require controller intervention. Reactive Spaces therefore identify precisely <strong>where repair transitions become necessary.</strong></p>
+
+<p>Rather than representing failures, Reactive Spaces represent situations in which the controller is expected to react:</p>
+
+<blockquote>
+<p>A Reactive Space reveals the set of configurations from which the controller must be able to move to another state without losing correctness.</p>
+</blockquote>
+
+<p>The discovery and analysis of Reactive Spaces is where the Correct-by-Construction methodology becomes most powerful. The methodology tells the designer exactly which autonomous transitions must be handled, and which controller transitions are required to handle them.</p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s8"><span class="num">8.</span> Well-formed controllers</h2>
+
+<p>Not every controller can be analysed using the methodology introduced in this part. Before semantic verification becomes meaningful, the controller must satisfy a collection of <span class="label">structural requirements.</span></p>
+
+<p>These requirements are expressed by the <span class="label">Well-Formedness Rules.</span> Together, they guarantee that:</p>
+
+<ul class="check-list">
+  <li>state semantics are well-defined,</li>
+  <li>obtained semantics are computable,</li>
+  <li>reactive situations are completely handled,</li>
+  <li>semantic ambiguities cannot arise.</li>
+</ul>
+
+<p>The Well-Formedness Rules therefore characterize <strong>the class of controllers for which Correct-by-Construction applies.</strong></p>
+
+<p>These rules are not arbitrary constraints imposed from outside. Rather, they are the minimal requirements needed to ensure that the semantic model is coherent and the design cycle can proceed without ambiguity. A controller that violates the rules may still execute correctly, but its semantics cannot be analyzed using the PWS methodology.</p>
+
+<blockquote>
+<p>Well-formedness ensures that the designer can rely on the semantic analysis performed by PWSEditor. Without these rules, the tool's guarantees would be limited to syntactic checks, and semantic properties could not be verified.</p>
+</blockquote>
+
+<hr>
+
+<p style="margin-top: 3rem; font-size: 0.95rem; color: #555; border-top: 1px solid var(--border); padding-top: 1rem;">
+The Correct-by-Construction methodology transforms controller design from an art into a discipline. By making semantics explicit and central, it provides a systematic way to build reactive controllers whose correctness emerges from the design process itself, rather than being established after the fact through exhaustive testing or formal verification.
+</p>
+
+</div>
+</body>
+</html>

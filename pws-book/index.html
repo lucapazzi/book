@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part-Whole Statecharts: Theory, Design, Practice</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=Source+Code+Pro:wght@400;500&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --bg: #fafaf8;
+    --accent: #2d5016;
+    --accent-light: #e8f0e2;
+    --red: #8b1a1a;
+    --red-light: #fde8e8;
+    --blue: #1a3a6b;
+    --border: #d4d0c8;
+    --caption-bg: #f0ede6;
+    --code-bg: #f5f3ee;
+    --sidebar: #f0ede6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.72;
+    font-size: 17px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .header {
+    background: linear-gradient(135deg, var(--accent) 0%, #1f3a0a 100%);
+    color: white;
+    padding: 4rem 2rem;
+    text-align: center;
+    margin-bottom: 3rem;
+    border-radius: 0 0 8px 8px;
+  }
+
+  .header h1 {
+    font-size: 2.8rem;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .header p {
+    font-size: 1.1rem;
+    font-weight: 300;
+    opacity: 0.95;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-top: 2.5rem;
+    margin-bottom: 1.2rem;
+    color: var(--text);
+    border-bottom: 3px solid var(--accent);
+    padding-bottom: 0.5rem;
+  }
+
+  h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-top: 1.8rem;
+    margin-bottom: 0.8rem;
+    color: var(--blue);
+  }
+
+  p {
+    margin-bottom: 1rem;
+    line-height: 1.8;
+  }
+
+  .toc-section {
+    background: var(--sidebar);
+    padding: 2rem;
+    border-radius: 8px;
+    margin: 2rem 0;
+    border-left: 5px solid var(--accent);
+  }
+
+  .toc-title {
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 1.2rem;
+  }
+
+  .part-list {
+    list-style: none;
+    padding: 0;
+  }
+
+  .part-list li {
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .part-list li:last-child {
+    border-bottom: none;
+  }
+
+  .part-list a {
+    display: inline-block;
+    padding: 0.6rem 1rem;
+    background: white;
+    border: 2px solid var(--accent);
+    border-radius: 4px;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    margin-bottom: 0.4rem;
+  }
+
+  .part-list a:hover {
+    background: var(--accent);
+    color: white;
+  }
+
+  .part-desc {
+    display: block;
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 0.3rem;
+    font-weight: 400;
+    font-style: italic;
+  }
+
+  .filoni-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+  }
+
+  .filone-card {
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  .filone-card h4 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .filone-card p {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #444;
+  }
+
+  .filone-card ul {
+    font-size: 0.9rem;
+    margin: 0.8rem 0 0 1rem;
+    color: #555;
+  }
+
+  .filone-card li {
+    margin-bottom: 0.4rem;
+  }
+
+  blockquote {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-light);
+    padding: 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.95em;
+  }
+
+  .info-box {
+    background: #e8f0f7;
+    border-left: 4px solid var(--blue);
+    padding: 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 6px 6px 0;
+  }
+
+  .info-box strong {
+    color: var(--blue);
+  }
+
+  hr {
+    border: none;
+    border-top: 2px solid var(--border);
+    margin: 2.5rem 0;
+  }
+
+  footer {
+    text-align: center;
+    padding: 2rem;
+    margin-top: 3rem;
+    border-top: 1px solid var(--border);
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .reading-guide {
+    background: var(--accent-light);
+    border: 2px solid var(--accent);
+    border-radius: 6px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+  }
+
+  .reading-guide h3 {
+    color: var(--accent);
+    margin-top: 0;
+  }
+
+  code {
+    background: var(--code-bg);
+    padding: 0.2em 0.5em;
+    border-radius: 3px;
+    font-family: 'Source Code Pro', monospace;
+    color: var(--blue);
+  }
+
+  .nav-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--border);
+  }
+
+  .nav-button {
+    display: inline-block;
+    padding: 0.8rem 1.5rem;
+    background: var(--accent);
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+  }
+
+  .nav-button:hover {
+    background: #1f3a0a;
+    box-shadow: 0 4px 12px rgba(45, 80, 22, 0.3);
+  }
+
+  .version {
+    color: #999;
+    font-size: 0.85rem;
+    margin-top: 1rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Part-Whole Statecharts</h1>
+  <p>Theory, Design, Practice</p>
+  <p style="font-size: 0.95rem; margin-top: 1rem; opacity: 0.9;">A comprehensive methodology for designing and verifying hierarchical reactive systems</p>
+</div>
+
+<div class="page">
+
+<h2>Welcome</h2>
+
+<p>This is a complete, self-contained tutorial on <strong>Part-Whole Statecharts (PWS)</strong>—a formal methodology for building reactive controllers whose correctness emerges from the design itself, rather than being verified after the fact.</p>
+
+<p>The book is organized into eight integrated parts, each building on the previous. The progression moves from philosophical motivation (Introduction and Part I) through formal foundations (Parts II–III) to practical methodology and tools (Parts IV–VI), concluding with synthesis and reflection (Postface).</p>
+
+<div class="reading-guide">
+  <h3>How to read this book</h3>
+  <p>This material is designed to be read sequentially, from Introduction through Postface. Each part depends on concepts introduced in previous parts. However, you can also:</p>
+  <ul style="margin: 0.8rem 0 0 1.5rem;">
+    <li><strong>Skip to Part VI</strong> if you want immediate hands-on practice with PWSEditor.</li>
+    <li><strong>Focus on Parts II–IV</strong> if you are interested in the core design methodology.</li>
+    <li><strong>Start with Part I</strong> if you want to understand the problems PWS solves.</li>
+  </ul>
+</div>
+
+<hr>
+
+<h2>Complete Table of Contents</h2>
+
+<div class="toc-section">
+  <div class="toc-title">📖 The Full Book</div>
+  <ol class="part-list">
+    <li>
+      <a href="introduction.html">Introduction</a>
+      <span class="part-desc">Philosophy of PWS, why design methodology matters, how this book is structured</span>
+    </li>
+    <li>
+      <a href="part-1-the-problem.html">Part I — The Problem</a>
+      <span class="part-desc">State explosion, mutual control, livelock, deadlock, and why late verification fails</span>
+    </li>
+    <li>
+      <a href="part-2-the-pws-model.html">Part II — The PWS Model</a>
+      <span class="part-desc">Assemblies, components, controllers, interfaces, and hierarchical composition</span>
+    </li>
+    <li>
+      <a href="part-3-configuration-semantics.html">Part III — Configuration Semantics</a>
+      <span class="part-desc">Specified vs. obtained semantics, reactive spaces, and why controllers need meaning</span>
+    </li>
+    <li>
+      <a href="part-4-designing-correct-controllers.html">Part IV — Designing Correct Controllers</a>
+      <span class="part-desc">Correct-by-Construction methodology, design cycle, semantic repair, well-formedness</span>
+    </li>
+    <li>
+      <a href="part-5-compositional-verification.html">Part V — Compositional Verification</a>
+      <span class="part-desc">Contracts, contract composition, lifting, hiding, hierarchical verification</span>
+    </li>
+    <li>
+      <a href="part-6-building-controllers.html">Part VI — Building a Controller with PWSEditor</a>
+      <span class="part-desc">Hands-on tutorial: Cover + Laser example, reading dashboards, closing exit zones</span>
+    </li>
+    <li>
+      <a href="postface.html">Postface — Reflections</a>
+      <span class="part-desc">Unifying principles, correctness as design property, future directions, open problems</span>
+    </li>
+  </ol>
+</div>
+
+<hr>
+
+<h2>The Four Workflow Threads</h2>
+
+<p>This project spans four distinct threads of work, each with its own discourse context and stylistic requirements. When unclear which thread a conversation belongs to, ask briefly before proceeding rather than assuming.</p>
+
+<div class="filoni-grid">
+  <div class="filone-card">
+    <h4>1. TEORIA</h4>
+    <p>Formal semantics, properties, cross-formalism comparisons (Harel Statecharts, UML, Petri nets, etc.).</p>
+    <ul>
+      <li>Rigorous register</li>
+      <li>Terminological precision</li>
+      <li>Clear distinction between established literature and original hypotheses</li>
+    </ul>
+  </div>
+
+  <div class="filone-card">
+    <h4>2. SCRITTURA SCIENTIFICA</h4>
+    <p>Paper drafting and revision, abstracts, related work, reviewer responses.</p>
+    <ul>
+      <li>Academic register</li>
+      <li>IMRaD structure where pertinent</li>
+      <li><strong>Never invent citations</strong>—flag uncertainty explicitly</li>
+      <li>LaTeX when requested</li>
+    </ul>
+  </div>
+
+  <div class="filone-card">
+    <h4>3. PROGRAMMAZIONE TOOL</h4>
+    <p>Software development: parser, graphic editor, model checker, simulator for PWS.</p>
+    <ul>
+      <li>Clean, commented code</li>
+      <li>Stack: [to be specified per project]</li>
+      <li>Architectural clarity</li>
+    </ul>
+  </div>
+
+  <div class="filone-card">
+    <h4>4. DIDATTICA</h4>
+    <p>Teaching materials: slides, exercises, student explanations.</p>
+    <ul>
+      <li>Simplified register</li>
+      <li>Concrete examples</li>
+      <li>Gradual concept progression</li>
+      <li>Minimal unnecessary jargon</li>
+    </ul>
+  </div>
+</div>
+
+<div class="info-box">
+  <strong>Note on this document:</strong> The Introduction and all Parts II–VI in this collection are written in the <strong>DIDATTICA</strong> thread—designed for teaching and learning. Parts for TEORIA or SCRITTURA SCIENTIFICA will be stored separately or marked explicitly when added.
+</div>
+
+<hr>
+
+<h2>How This Book Came Together</h2>
+
+<p>This HTML collection was created by synthesizing:</p>
+
+<ul style="margin: 1rem 0 1rem 1.5rem;">
+  <li><strong>Original PDF sources</strong> from the PWS project archive</li>
+  <li><strong>Careful translation</strong> of Italian tutorial material into English</li>
+  <li><strong>Unified HTML formatting</strong> with a consistent visual language across all parts</li>
+  <li><strong>Hyperlinked navigation</strong> for seamless reading</li>
+</ul>
+
+<p>All eight parts share a uniform design system: typography, colour palette, spacing, and interactive elements. This ensures that the book reads as a single, coherent whole, even though each part can also stand alone.</p>
+
+<hr>
+
+<h2>About This Edition</h2>
+
+<blockquote>
+<p><strong>Language:</strong> English (translated from original Italian materials)</p>
+<p><strong>Format:</strong> Self-contained HTML (no external dependencies)</p>
+<p><strong>Intended Audience:</strong> Students, researchers, and practitioners of reactive systems design</p>
+<p><strong>Scope:</strong> Complete coverage from motivation through hands-on tool use to reflection</p>
+</blockquote>
+
+<div class="info-box">
+  <strong>To navigate:</strong> Each chapter includes a table of contents with internal links. Use your browser's back button or the navigation at the bottom of each page to move between parts. All HTML files are in the root directory and can be viewed locally without an internet connection.
+</div>
+
+<hr>
+
+<h2>Key Concepts at a Glance</h2>
+
+<p><strong>Assembly</strong> — A collection of independent component state machines whose behaviour you must coordinate.</p>
+
+<p><strong>Controller</strong> — The hierarchical state machine that coordinates assemblies by observing component states and issuing commands.</p>
+
+<p><strong>Configuration Semantics</strong> (<code>Sem</code>) — The set of assembly configurations that each controller state is intended to represent.</p>
+
+<p><strong>Exit Zone</strong> — An autonomous component evolution that would move the system outside the current controller state's semantics; must be handled by a controller reaction.</p>
+
+<p><strong>Correct-by-Construction</strong> — Design methodology where controller correctness emerges incrementally during design, guided by semantic feedback, rather than being verified after completion.</p>
+
+<p><strong>Reactive Space</strong> — All assembly configurations reachable through autonomous evolution while the controller remains in a given state.</p>
+
+<p><strong>Compositional Verification</strong> — Verification technique where each controller is verified together with its directly controlled assembly; verified subsystems become abstract components for higher levels, avoiding global state explosion.</p>
+
+<hr>
+
+<div class="nav-footer">
+  <div>
+    <h3 style="margin: 0 0 0.5rem 0;">Start Reading</h3>
+    <a href="introduction.html" class="nav-button">→ Begin with Introduction</a>
+  </div>
+  <div style="text-align: right;">
+    <p style="margin: 0 0 0.5rem 0; color: #999; font-size: 0.9rem;">All chapters available locally</p>
+    <p style="margin: 0; color: #999; font-size: 0.85rem;">Part-Whole Statecharts</p>
+  </div>
+</div>
+
+</div>
+
+<footer>
+  <p>Part-Whole Statecharts: Theory, Design, Practice</p>
+  <p>A complete tutorial on hierarchical reactive systems design and verification</p>
+  <p class="version">HTML Edition | All content self-contained | No external dependencies required</p>
+</footer>
+
+</body>
+</html>

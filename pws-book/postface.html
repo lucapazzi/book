@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Postface — Part-Whole Statecharts</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=Source+Code+Pro:wght@400;500&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --bg: #fafaf8;
+    --accent: #2d5016;
+    --accent-light: #e8f0e2;
+    --red: #8b1a1a;
+    --red-light: #fde8e8;
+    --blue: #1a3a6b;
+    --border: #d4d0c8;
+    --caption-bg: #f0ede6;
+    --code-bg: #f5f3ee;
+    --sidebar: #f0ede6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.72;
+    font-size: 17px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 3rem 2rem 5rem;
+  }
+
+  h1 {
+    font-size: 2.1rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  h1 .part {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  h2 {
+    font-size: 1.45rem;
+    font-weight: 700;
+    margin-top: 3rem;
+    margin-bottom: 1rem;
+    color: var(--text);
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 0.4rem;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 1.8rem;
+    margin-bottom: 0.6rem;
+    color: var(--blue);
+  }
+
+  p {
+    margin-bottom: 1rem;
+  }
+
+  p.intro {
+    font-size: 1.02rem;
+    line-height: 1.78;
+    color: #2a2a3e;
+    margin-bottom: 1.4rem;
+    font-style: italic;
+  }
+
+  strong { font-weight: 600; }
+
+  em { font-style: italic; }
+
+  code {
+    font-family: 'Source Code Pro', 'Menlo', monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+    color: var(--blue);
+  }
+
+  .label {
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-light);
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.95em;
+  }
+
+  blockquote p:last-child { margin-bottom: 0; }
+
+  blockquote strong { color: var(--text); }
+
+  .question {
+    border-left: 3px solid var(--blue);
+    background: #e8f0f7;
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.95em;
+    font-style: italic;
+  }
+
+  .question p:last-child { margin-bottom: 0; }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2.5rem 0;
+  }
+
+  .toc {
+    background: var(--sidebar);
+    padding: 1.2rem 1.5rem;
+    border-radius: 6px;
+    margin: 2rem 0;
+  }
+
+  .toc-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 0.6rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .toc ol {
+    margin: 0;
+    padding-left: 1.2rem;
+  }
+
+  .toc li {
+    margin-bottom: 0.3rem;
+    font-size: 0.93rem;
+  }
+
+  .toc a {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .toc a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  ul, ol {
+    margin: 0.8rem 0 1rem 1.5rem;
+  }
+
+  li {
+    margin-bottom: 0.4rem;
+  }
+
+  .check-list {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .check-list li {
+    padding-left: 1.6rem;
+    position: relative;
+    margin-bottom: 0.6rem;
+  }
+
+  .check-list li::before {
+    content: "\2713";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .principle-box {
+    background: var(--accent-light);
+    border: 2px solid var(--accent);
+    border-radius: 6px;
+    padding: 1.2rem;
+    margin: 1.5rem 0;
+    text-align: center;
+  }
+
+  .principle-box p {
+    margin: 0;
+    font-size: 1.05em;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  .principle-box strong {
+    color: var(--accent);
+  }
+
+  figure { text-align: center; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>
+  <span class="part">Postface</span>
+  Reflections on Part-Whole Statecharts
+</h1>
+
+<p class="intro">
+We have now completed our journey through the methodology of Part-Whole Statecharts. From the basic concepts of assemblies and controllers, through configuration semantics and correct-by-construction design, to compositional verification—we have explored a systematic approach to building reactive systems whose correctness emerges from the design process itself. This postface steps back to reflect on what we have learned, and to place PWS within a broader engineering context.
+</p>
+
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <ol>
+    <li><a href="#s1">Looking back</a></li>
+    <li><a href="#s2">Hierarchy as a unifying principle</a></li>
+    <li><a href="#s3">Correctness as a design property</a></li>
+    <li><a href="#s4">From local reasoning to global behaviour</a></li>
+    <li><a href="#s5">Beyond the formalism</a></li>
+    <li><a href="#s6">Final remarks</a></li>
+  </ol>
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s1">Looking back</h2>
+
+<p>The purpose of this book has never been simply to introduce another state-machine formalism. At first sight, Part-Whole Statecharts may appear to be a hierarchical extension of conventional Statecharts, enriched with explicit assemblies, controllers, and interfaces. Such a description, however, would capture only their external appearance.</p>
+
+<p><strong>The real contribution of the PWS methodology lies elsewhere.</strong></p>
+
+<p>Throughout this tutorial, we have progressively moved from behavioural modelling to configuration semantics, from configuration semantics to controller design, and finally from local correctness to compositional verification. These topics may initially seem to belong to different areas. In reality, they are different manifestations of the same underlying idea.</p>
+
+<blockquote>
+<p>A controller state should not merely represent a point in an execution. It should represent a well-defined set of situations in which the controlled system is expected to operate.</p>
+</blockquote>
+
+<p>Once this interpretation is adopted, the controller ceases to be a graph whose correctness is verified afterwards. Instead, it becomes <strong>the implementation of a behavioural semantics that has been specified beforehand.</strong></p>
+
+<h3>A Conceptual Shift</h3>
+
+<p>This apparently small conceptual shift changes the entire design process.</p>
+
+<ul>
+  <li><strong>Rather than drawing a controller</strong> and asking whether it is correct, the designer <strong>first specifies the intended meaning</strong> of every controller state.</li>
+  <li><strong>The controller is then progressively constructed</strong> until its behaviour realizes exactly that meaning.</li>
+  <li><strong>Verification no longer appears as a separate activity</strong> performed after design. Instead, it accompanies the design process from its very beginning.</li>
+</ul>
+
+<blockquote>
+<p>For this reason, Part-Whole Statecharts should not be regarded merely as a modelling language, nor merely as a verification framework. They constitute a <span class="label">methodology</span> in which modelling, semantics, design, and verification become tightly integrated activities.</p>
+</blockquote>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s2">Hierarchy as a unifying principle</h2>
+
+<p>A second idea has accompanied us throughout the book: <strong>hierarchy.</strong></p>
+
+<p>Reactive systems are naturally organized as assemblies of subsystems. PWS deliberately embraces this organization instead of flattening it into a single global model.</p>
+
+<p>The same hierarchical decomposition is used consistently at every stage of the methodology:</p>
+
+<ul class="check-list">
+  <li>It structures the <strong>system architecture.</strong></li>
+  <li>It structures <strong>behavioural descriptions.</strong></li>
+  <li>It structures <strong>configuration semantics.</strong></li>
+  <li>It structures <strong>controller design.</strong></li>
+  <li>It structures <strong>verification.</strong></li>
+</ul>
+
+<p>The modelling hierarchy, the semantic hierarchy, and the verification hierarchy therefore coincide. <strong>This correspondence is perhaps the most distinctive characteristic of the PWS approach.</strong></p>
+
+<h3>Hierarchy as Organizing Principle</h3>
+
+<p>Rather than introducing hierarchy as a convenient modelling technique, PWS turns it into <strong>the organizing principle of the entire engineering process.</strong></p>
+
+<blockquote>
+<p>Part-Whole Statecharts invite the designer to think in terms of <strong>parts and wholes, semantics and behaviour, abstraction and hierarchy.</strong></p>
+</blockquote>
+
+<p>If, after reading this book, you find yourself asking:</p>
+
+<div class="question">
+<p><strong>What should this state mean?</strong></p>
+<p>rather than</p>
+<p><strong>Which transition should I draw next?</strong></p>
+</div>
+
+<p>then the principal objective of this tutorial will have been achieved.</p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s3">Correctness as a design property</h2>
+
+<p>Classical verification methods often operate under a strong separation of concerns:</p>
+
+<ol>
+  <li>Design the controller.</li>
+  <li>Verify it against a collection of desired properties.</li>
+  <li>When verification fails, return to the model and iterate.</li>
+</ol>
+
+<p>This workflow treats design and verification as successive phases. Correctness becomes something to be established only after the controller is complete.</p>
+
+<p>PWS proposes a fundamentally different philosophy:</p>
+
+<blockquote>
+<p><strong>Correctness is progressively established while the controller is being designed.</strong></p>
+</blockquote>
+
+<h3>Correctness Through Construction</h3>
+
+<p>Several mechanisms work together to embed correctness into the design process itself:</p>
+
+<ul>
+  <li><strong>Configuration semantics</strong> guides the construction of the controller.</li>
+  <li><strong>Reactive behaviour</strong> preserves semantic consistency.</li>
+  <li><strong>Local obligations</strong> ensure that every design decision remains compatible with the intended behaviour.</li>
+  <li><strong>The Correct-by-Construction cycle</strong> provides systematic feedback at every step.</li>
+</ul>
+
+<p>Verification therefore becomes <strong>an integral part of design rather than a subsequent validation activity.</strong></p>
+
+<p>This perspective explains why Correct-by-Construction occupies such a central role in the methodology. <strong>It is not simply an optimization of model checking. It is a different way of thinking about controller design.</strong></p>
+
+<blockquote>
+<p>Under this philosophy, the designer never surprises themselves. Every design decision produces immediate semantic feedback. Conflicts between intended behaviour and constructed behaviour are discovered as soon as they arise—when they are easiest to fix.</p>
+</blockquote>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s4">From local reasoning to global behaviour</h2>
+
+<p>Complex systems cannot usually be understood as monolithic objects. Their complexity must be mastered through decomposition.</p>
+
+<p>The Part-Whole philosophy exploits this observation by allowing <strong>every verified subsystem to become an abstract behavioural component within a larger hierarchy.</strong></p>
+
+<h3>Abstraction Through Composition</h3>
+
+<p>Local reasoning propagates naturally upwards through behavioural contracts:</p>
+
+<blockquote>
+<p>Higher-level controllers need not know how a subsystem has been internally implemented. They only rely on the behaviour that it <span class="label">guarantees.</span></p>
+</blockquote>
+
+<p>This abstraction mechanism has profound implications:</p>
+
+<ul>
+  <li><strong>Encapsulation:</strong> Internal complexity is hidden from higher levels.</li>
+  <li><strong>Reusability:</strong> Verified subsystems can be integrated into multiple larger systems.</li>
+  <li><strong>Scalability:</strong> System size no longer creates exponential verification complexity.</li>
+  <li><strong>Modularity:</strong> Subsystems can be designed and verified independently.</li>
+</ul>
+
+<blockquote>
+<p><strong>Compositional verification is therefore not an additional layer built on top of PWS. It is the natural consequence of the hierarchical organization of the model.</strong></p>
+</blockquote>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s5">Beyond the formalism</h2>
+
+<p>Although this tutorial has focused on the formal aspects of Part-Whole Statecharts, the methodology ultimately addresses a practical engineering problem.</p>
+
+<p>Modern reactive systems are becoming increasingly large, distributed, and heterogeneous. Their correctness can no longer depend exclusively on exhaustive exploration of enormous global state spaces. Traditional model checking approaches that work well on systems with thousands of states become intractable on systems with millions or billions of states.</p>
+
+<h3>A Practical Necessity</h3>
+
+<p>Design methodologies capable of combining abstraction, hierarchy, and formal verification will therefore become increasingly important. Part-Whole Statecharts represent one possible step in this direction.</p>
+
+<div class="principle-box">
+<p><strong>Design behaviour through semantics, preserve semantics through construction, and verify systems through hierarchy.</strong></p>
+</div>
+
+<h3>Open Research Directions</h3>
+
+<p>Whether future developments will extend this methodology to distributed controllers, adaptive systems, or autonomous cyber-physical systems remains an open research direction. Nevertheless, the fundamental idea remains unchanged:</p>
+
+<blockquote>
+<p><strong>The objective is not simply to describe the behaviour of reactive systems. It is to provide engineers with a systematic way of constructing systems whose correctness progressively emerges from the design itself.</strong></p>
+</blockquote>
+
+<p>Extensions to PWS that merit investigation include:</p>
+
+<ul>
+  <li><strong>Distributed PWS:</strong> Multiple controllers coordinating across network boundaries.</li>
+  <li><strong>Adaptive PWS:</strong> Controllers that modify their own structure in response to changing requirements.</li>
+  <li><strong>Probabilistic PWS:</strong> Handling uncertainty and probabilistic behaviour.</li>
+  <li><strong>Cyber-physical PWS:</strong> Integration with continuous and hybrid dynamics.</li>
+  <li><strong>Formal semantics via temporal logic:</strong> Bridging PWS contracts with LTL/MTL specifications.</li>
+</ul>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s6">Final remarks</h2>
+
+<p>Every formalism reflects a particular way of observing a problem. Statecharts view behaviour as a collection of reactive transitions. Petri nets view behaviour as a flow of tokens. Automata view behaviour as sequences of symbols.</p>
+
+<p>Part-Whole Statecharts view behaviour as the realization of intended semantic constraints, organized hierarchically and verified compositionally.</p>
+
+<p>This perspective is neither universally better nor universally worse than others. It is suited to certain classes of problems and less suited to others. It excels when:</p>
+
+<ul>
+  <li>The system has a natural hierarchical decomposition,</li>
+  <li>Formal correctness is a requirement rather than a luxury,</li>
+  <li>The system must evolve over time without losing semantic consistency,</li>
+  <li>Understanding the intended meaning of controller states is as important as understanding their transitions.</li>
+</ul>
+
+<h3>The Broader Message</h3>
+
+<p>But beyond the specific formalism, we hope this book conveys a broader message:</p>
+
+<blockquote>
+<p><strong>In the design of reactive systems, semantics comes first. Behaviour should emerge from semantics, not the other way around. And when systems are organized hierarchically, their verification can be organized hierarchically as well.</strong></p>
+</blockquote>
+
+<p>If you carry away only this insight—that controller states should have explicit, verified meanings, and that hierarchical systems should be verified hierarchically—then this tutorial will have served its purpose.</p>
+
+<p>The future of reactive system design belongs to methodologies that make this unity of structure explicit: where design, semantics, and verification are not separate concerns but aspects of a single coherent process.</p>
+
+<p style="margin-top: 2.5rem; text-align: center; font-style: italic; color: #555;">
+◆
+</p>
+
+</div>
+</body>
+</html>
