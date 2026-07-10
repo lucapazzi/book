@@ -43,5 +43,5 @@ Keep the Google Fonts `@import` exactly as it is in the other chapters — do **
 
 ## Notes
 
-- git cannot be run against this OneDrive-synced folder from the Cowork sandbox (the mount blocks git's internal file operations). Commits/pushes must be run by the user from their own Mac terminal.
+- git cannot be run from the Cowork sandbox because only the `pws-book/` subfolder is mounted, while the repo's `.git` lives in the parent (repo root, not shared). To enable git from the sandbox, share the repo root folder; otherwise commits/pushes must be run by the user from their own Mac terminal.
 - The book is published at: https://github.com/lucapazzi/book (folder `pws-book/`).

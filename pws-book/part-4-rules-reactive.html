@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part IV — Rule Deep Dive 2: The Reactive Space</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=Source+Code+Pro:wght@400;500&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --bg: #fafaf8;
+    --accent: #2d5016;
+    --accent-light: #e8f0e2;
+    --red: #8b1a1a;
+    --red-light: #fde8e8;
+    --blue: #1a3a6b;
+    --border: #d4d0c8;
+    --caption-bg: #f0ede6;
+    --code-bg: #f5f3ee;
+    --sidebar: #f0ede6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.72;
+    font-size: 17px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 3rem 2rem 5rem;
+  }
+
+  h1 {
+    font-size: 2.1rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  h1 .part {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  h2 {
+    font-size: 1.45rem;
+    font-weight: 700;
+    margin-top: 3rem;
+    margin-bottom: 1rem;
+    color: var(--text);
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 0.4rem;
+  }
+
+  h2 .num {
+    color: var(--accent);
+    margin-right: 0.3em;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 1.8rem;
+    margin-bottom: 0.6rem;
+    color: var(--blue);
+  }
+
+  p {
+    margin-bottom: 1rem;
+  }
+
+  p.intro {
+    font-size: 1.02rem;
+    line-height: 1.78;
+    color: #2a2a3e;
+    margin-bottom: 1.4rem;
+  }
+
+  strong { font-weight: 600; }
+
+  em { font-style: italic; }
+
+  code {
+    font-family: 'Source Code Pro', 'Menlo', monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+    color: var(--blue);
+  }
+
+  .label {
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .label-red {
+    font-weight: 600;
+    color: var(--red);
+  }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-light);
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.95em;
+  }
+
+  blockquote p:last-child { margin-bottom: 0; }
+
+  blockquote strong { color: var(--text); }
+
+  .warning {
+    border-left: 3px solid var(--red);
+    background: var(--red-light);
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.95em;
+  }
+
+  figure {
+    margin: 2rem 0;
+    text-align: center;
+  }
+
+  figure img {
+    max-width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  figcaption {
+    margin-top: 0.8rem;
+    font-size: 0.88rem;
+    color: #555;
+    line-height: 1.55;
+    text-align: left;
+    background: var(--caption-bg);
+    padding: 0.7rem 1rem;
+    border-radius: 4px;
+    border-left: 3px solid var(--accent);
+  }
+
+  figcaption strong {
+    color: var(--text);
+  }
+
+  ul, ol {
+    margin: 0.8rem 0 1rem 1.5rem;
+  }
+
+  li {
+    margin-bottom: 0.4rem;
+  }
+
+  .cycle-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 1.2rem 0;
+  }
+
+  .cycle-list li {
+    padding-left: 1.8rem;
+    position: relative;
+    margin-bottom: 0.8rem;
+    font-size: 0.98rem;
+  }
+
+  .cycle-list li::before {
+    content: attr(data-step);
+    position: absolute;
+    left: 0;
+    display: inline-block;
+    width: 1.4rem;
+    height: 1.4rem;
+    background: var(--accent);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 1.4rem;
+  }
+
+  table {
+    border-collapse: collapse;
+    margin: 1rem 0 1.5rem;
+    font-size: 0.92em;
+    width: 100%;
+  }
+
+  th {
+    background: var(--accent-light);
+    font-weight: 600;
+    text-align: left;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid var(--border);
+  }
+
+  td {
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .dashboard-table {
+    width: auto;
+    margin: 1rem auto;
+  }
+
+  .dashboard-table td:first-child {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2.5rem 0;
+  }
+
+  .toc {
+    background: var(--sidebar);
+    padding: 1.2rem 1.5rem;
+    border-radius: 6px;
+    margin: 2rem 0;
+  }
+
+  .toc-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 0.6rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .toc ol {
+    margin: 0;
+    padding-left: 1.2rem;
+  }
+
+  .toc li {
+    margin-bottom: 0.3rem;
+    font-size: 0.93rem;
+  }
+
+  .toc a {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .toc a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  .check-list {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .check-list li {
+    padding-left: 1.6rem;
+    position: relative;
+    margin-bottom: 0.6rem;
+  }
+
+  .check-list li::before {
+    content: "\2713";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .constraint {
+    text-align: center;
+    font-size: 1em;
+    margin: 1rem 0;
+    background: var(--code-bg);
+    padding: 0.8rem;
+    border-radius: 4px;
+    font-family: 'Source Code Pro', monospace;
+  }
+
+  .epigraph {
+    font-style: italic;
+    color: #3a3a4a;
+    text-align: center;
+    margin: 2rem 0;
+    padding: 1rem;
+    border-top: 2px solid var(--accent);
+    border-bottom: 2px solid var(--accent);
+  }
+
+
+  .example {
+    border-left: 4px solid #1a3a6b;
+    background: #f0f5ff;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .example p:last-child { margin-bottom: 0; }
+
+  .formal {
+    border-left: 4px solid #2d5016;
+    background: #f5faf0;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+    font-family: 'Source Code Pro', monospace;
+  }
+
+  .formal p:last-child { margin-bottom: 0; }
+
+  .formal .computational-model {
+    border-top: 1px solid var(--accent);
+    border-bottom: 1px solid var(--accent);
+    padding: 0.8rem 0;
+    margin: 1rem 0;
+    background: rgba(45, 80, 22, 0.03);
+  }
+
+  .diagram-notation {
+    border-left: 4px solid #8b1a1a;
+    background: #fef0f0;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .diagram-notation p:last-child { margin-bottom: 0; }
+
+  .note {
+    border-left: 4px solid #1a5ab8;
+    background: #f0f8ff;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .note p:last-child { margin-bottom: 0; }
+
+  .contract-box {
+    border-left: 4px solid var(--accent);
+    background: #f9fbf7;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .contract-box p:last-child { margin-bottom: 0; }
+
+  .hierarchy-tree {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #fafaf8;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+  }
+
+  .step-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.3rem 1rem;
+    margin: 1rem 0;
+  }
+
+  .step-num {
+    font-family: 'Source Code Pro', monospace;
+    font-weight: 500;
+    color: var(--accent);
+    font-size: 0.9em;
+  }
+
+  .eq {
+    text-align: center;
+    font-size: 1.15em;
+    margin: 1rem 0 1.2rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .intro {
+    font-size: 1.05em;
+    color: #333;
+    border-left: 3px solid var(--blue);
+    padding-left: 1.2rem;
+    margin: 1.5rem 0 2rem;
+  }
+
+  .keyboard {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.82em;
+    background: #e8e6e0;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 0.1em 0.45em;
+    box-shadow: 0 1px 0 #b0ada6;
+  }
+
+  .color-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin-right: 4px;
+    vertical-align: middle;
+    border: 1px solid rgba(0,0,0,0.15);
+  }
+
+  .green { background: #2d8b2d; }
+  .red { background: #c62828; }
+  .gold { background: #c8a600; }
+  .grey { background: #999; }
+  .blue-s { background: #1a5ab8; }
+  .amber { background: #e6a800; }
+
+  .error-list {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .error-list li {
+    padding-left: 1.6rem;
+    position: relative;
+    margin-bottom: 0.6rem;
+  }
+
+  .error-list li::before {
+    content: "\26A0";
+    position: absolute;
+    left: 0;
+    color: var(--red);
+  }
+
+  /* Code / algorithm block (shared) */
+  pre.algorithm, .algorithm {
+    font-family: 'Source Code Pro', 'Menlo', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+    background: var(--code-bg, #f5f3ee);
+    border: 1px solid var(--border, #d4d0c8);
+    border-left: 4px solid var(--accent, #2d5016);
+    border-radius: 0 4px 4px 0;
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    overflow-x: auto;
+    white-space: pre;
+    color: #26324a;
+    -moz-tab-size: 2;
+    tab-size: 2;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>
+  <span class="part">Part IV — Rule Deep Dive · 2 of 3</span>
+  Answering Autonomous Change: The Reactive Space
+</h1>
+
+<p class="intro">
+The second companion note follows the direction opposite to the first. Where File&nbsp;1 traced semantics <em>into</em> a state through its incoming transitions, this one asks what a state must do when the Assembly slips <em>out</em> of its semantics on its own. Part&nbsp;IV, §3 computed the reactive space <code>RS(s)</code>—the exit zones, the autonomous successors that leave <code>Sem(s)</code>. Three rules govern the controller's answer: <code>R2</code> (every exit zone is covered), <code>R3</code> (covered unambiguously) and <code>R4</code> (no stale exit zones). Together they turn the vague duty "handle autonomous behaviour" into a finite, checkable one.
+</p>
+
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <ol>
+    <li><a href="#s1">The reactive space, recalled</a></li>
+    <li><a href="#r2">R2 — Coverage: never leave a boundary unanswered</a></li>
+    <li><a href="#r3">R3 — Determinism: answer it exactly once</a></li>
+    <li><a href="#r4">R4 — No orphan exit zones</a></li>
+    <li><a href="#tool">In PWSEditor: reading exit zones, adding reactions</a></li>
+  </ol>
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s1"><span class="num">1.</span> The reactive space, recalled</h2>
+
+<p>An exit zone of <code>s</code> is a configuration reached from a currently reachable, in-domain configuration by a single autonomous step, and landing outside <code>Sem(s)</code>—Part&nbsp;IV, §3. It is not an error but an <strong>obligation</strong>: a boundary condition the controller is required to answer. Part&nbsp;III, Figure&nbsp;5.1 showed the answer as a second move between possible worlds—a <em>spontaneous</em> autonomous step out of the semantics, followed by an <em>induced</em> guard-triggered reaction that restores consistency.</p>
+
+<p>This is the mirror image of File&nbsp;1. There, incoming transitions <em>build</em> a state's semantics; here, outgoing <em>autonomous</em> transitions threaten it and outgoing <em>reactive</em> transitions defend it. A reaction is itself a guard-triggered transition: its guard is the exit-zone condition, and it may carry an action that repairs the configuration on the way out. The three rules of this note simply count and constrain those reactions—how many an exit zone must have, and whether the exit zone is real (Figure&nbsp;1).</p>
+
+<figure>
+<svg viewBox="0 0 820 232" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="An exit zone with zero, one, or two reactions: coverage and determinism" style="width:100%;height:auto;background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+ <defs>
+  <marker id="f2-g" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2d5016"/></marker>
+  <marker id="f2-a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#b58500"/></marker>
+  <marker id="f2-x" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#b9b6ad"/></marker>
+ </defs>
+ <line x1="275" y1="18" x2="275" y2="214" stroke="#ecece6" stroke-width="1"/>
+ <line x1="545" y1="18" x2="545" y2="214" stroke="#ecece6" stroke-width="1"/>
+ <!-- column 1: no reaction -->
+ <text x="140" y="28" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="12" fill="#6a6a72">no reaction</text>
+ <rect x="70" y="44" width="140" height="30" rx="15" fill="#fff" stroke="#8b1a1a" stroke-width="1.5"/>
+ <text x="140" y="64" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="13" fill="#1a3a6b">(Open, On)</text>
+ <path d="M140,76 V120" fill="none" stroke="#b9b6ad" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#f2-x)"/>
+ <text x="140" y="146" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="18" fill="#8b1a1a">✗</text>
+ <text x="140" y="205" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="12.5" font-weight="600" fill="#8b1a1a">R2 fails — uncovered</text>
+ <!-- column 2: one reaction -->
+ <text x="410" y="28" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="12" fill="#6a6a72">one reaction</text>
+ <rect x="340" y="44" width="140" height="30" rx="15" fill="#fff" stroke="#2d5016" stroke-width="1.5"/>
+ <text x="410" y="64" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="13" fill="#1a3a6b">(Open, On)</text>
+ <path d="M410,76 V140" fill="none" stroke="#2d5016" stroke-width="2" marker-end="url(#f2-g)"/>
+ <text x="454" y="112" text-anchor="start" font-family="'Source Code Pro',monospace" font-size="10" fill="#2d5016">[cover.Open]</text>
+ <rect x="365" y="142" width="90" height="30" rx="8" fill="#eef4e8" stroke="#2d5016" stroke-width="1.5"/>
+ <text x="410" y="162" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="13" fill="#2d5016">Idle</text>
+ <text x="410" y="205" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="12.5" font-weight="600" fill="#2d5016">R2 ✓ · R3 ✓</text>
+ <!-- column 3: two reactions -->
+ <text x="680" y="28" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="12" fill="#6a6a72">two reactions</text>
+ <rect x="610" y="44" width="140" height="30" rx="15" fill="#fff" stroke="#b58500" stroke-width="1.5"/>
+ <text x="680" y="64" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="13" fill="#1a3a6b">(Open, On)</text>
+ <path d="M672,76 C 650,104 636,116 632,140" fill="none" stroke="#b58500" stroke-width="2" marker-end="url(#f2-a)"/>
+ <path d="M688,76 C 710,104 724,116 728,140" fill="none" stroke="#b58500" stroke-width="2" marker-end="url(#f2-a)"/>
+ <rect x="590" y="142" width="84" height="30" rx="8" fill="#fff7e6" stroke="#b58500" stroke-width="1.5"/>
+ <text x="632" y="162" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="13" fill="#8a6500">Idle</text>
+ <rect x="686" y="142" width="84" height="30" rx="8" fill="#fff7e6" stroke="#b58500" stroke-width="1.5"/>
+ <text x="728" y="162" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="13" fill="#8a6500">Halt</text>
+ <text x="680" y="205" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="12.5" font-weight="600" fill="#8b1a1a">R3 fails — ambiguous</text>
+</svg>
+<figcaption><strong>Figure 1</strong> &mdash; Counting reactions at one exit zone <code>(Open, On)</code>. <strong>Left:</strong> no autonomous reaction covers it—R2 fails, the boundary is unanswered. <strong>Centre:</strong> exactly one reaction, to <code>Idle</code> under <code>[cover.Open]</code>—R2 and R3 both hold. <strong>Right:</strong> two competing reactions from the same exit zone—R2 is satisfied but R3 fails, because the controller's response is now ambiguous. Coverage asks for <em>at least one</em>; determinism asks for <em>at most one</em>.</figcaption>
+</figure>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="r2"><span class="num">2.</span> R2 — Coverage: never leave a boundary unanswered</h2>
+
+<div class="contract-box">
+<p><span class="label">R2 — Exit-zone coverage.</span> Every external exit zone of <code>s</code>—every element of <code>RS(s)</code>—is covered by at least one enabled autonomous reaction.</p>
+</div>
+
+<h3>Why it matters</h3>
+
+<p>An exit zone is not a possibility the controller may ignore: autonomous evolution <em>will</em> reach it, sooner or later, because the components move on their own. If no reaction is in place, the moment the Assembly steps into the exit zone the controller state and the actual configuration part ways—and, with nothing to move the controller, they stay parted. Coverage is what guarantees a way back: at least one enabled reaction that carries the Assembly into a state whose semantics admits the new configuration. Where <code>Sem(s)</code> encodes safety, an uncovered exit zone is precisely an unsafe boundary the controller cannot leave.</p>
+
+<p>The qualifier <em>external</em> is what makes the obligation finite and honest. An external exit zone starts from a currently reachable configuration that satisfies the state's constraints and reaches a target outside the constraint domain; drift that stays inside the reachable, in-domain configurations is <em>internal</em> and carries no obligation. R2 is about coverage, not uniqueness—"covered" means "handled at least once".</p>
+
+<div class="warning">
+<p><strong>Failure mode.</strong> <strong>Uncovered exit zone</strong> — an external exit zone with no enabled autonomous transition covering its target. The exit-zone row is shown red, the dashboard header turns problematic, and the state is listed under <em>Uncovered Exit Zones</em>—except on fail states, where the check is masked (see File&nbsp;3, R8).</p>
+</div>
+
+<div class="note">
+<p><strong>In PWSEditor.</strong> Exit zones appear as rows in the state dashboard; external, uncovered ones are <span class="label-red">red</span>. A covering reaction is added directly by an autonomous guard-triggered transition (<code>Cmd/Ctrl&nbsp;+&nbsp;drag</code> from the source state), and the autonomous-guard popup offers exactly the eligible exit-zone targets—so the natural gesture also produces a valid guard. Once a target is covered, its row turns green. The obligation is aggregated in the Controller Report under <em>Uncovered Exit Zones</em>.</p>
+</div>
+
+<div class="example">
+<p><strong>Micro-example.</strong> In <code>Work</code>, with <code>Sem(Work) = {(Closed, On)}</code>, the cover may open autonomously, so <code>RS(Work) = {(Open, On)}</code>. Left alone, that row is red and <code>Work</code> is not well-formed. Adding the fail-safe reaction <code>Work → Idle</code> with guard <code>[cover.Open]</code> and action <code>⟨laser.off⟩</code> covers the exit zone; the row turns green (this is Part&nbsp;IV, Figure&nbsp;3.1).</p>
+</div>
+
+<p><a href="part-4-designing-correct-controllers.html#s4">&#8592; Back to R2 in Part&nbsp;IV</a></p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="r3"><span class="num">3.</span> R3 — Determinism: answer it exactly once</h2>
+
+<div class="contract-box">
+<p><span class="label">R3 — Reaction determinism.</span> No exit zone enables more than one competing autonomous reaction. Coverage (R2) guarantees a reaction exists; determinism guarantees it is unambiguous.</p>
+</div>
+
+<h3>Why it matters</h3>
+
+<p>Autonomous reactions are not chosen by an event the designer controls—they fire on the Assembly's own moves. If a single exit zone enables two autonomous reactions leading to different states, the controller's response to that boundary condition is <em>ambiguous</em>: two futures are equally admissible, and the model no longer describes a single behaviour. R2 and R3 are the two halves of a single well-posed answer—<em>at least one</em> reaction so the boundary is handled, and <em>at most one</em> so the handling is determinate.</p>
+
+<div class="warning">
+<p><strong>Failure mode.</strong> Two enabled autonomous transitions from the same source cover the same exit-zone target. Coverage still holds—the boundary is handled—so the symptom is subtler than an uncovered zone: the danger is not a gap but a fork.</p>
+</div>
+
+<div class="note">
+<p><strong>In PWSEditor.</strong> Determinism is enforced by <em>prevention</em> rather than by a report entry. The autonomous-guard popup hides exit-zone targets already handled by another enabled autonomous transition from the same source, so a duplicate reaction is hard to create in the standard workflow. There is currently no separate Controller-Report section flagging autonomous duplicate coverage as a distinct issue—so, unlike R2, R3 is a discipline the editor maintains for you rather than a line in the report. Advanced editing that bypasses the popup can still create a fork, which is why the rule is worth stating explicitly.</p>
+</div>
+
+<div class="example">
+<p><strong>Micro-example.</strong> Suppose <code>Work</code> already covers <code>(Open, On)</code> with <code>Work → Idle [cover.Open]</code>. Adding a second autonomous transition <code>Work → Halt [cover.Open]</code> covering the same exit zone leaves R2 satisfied but violates R3: on the cover opening, the controller could go to either <code>Idle</code> or <code>Halt</code>. The standard popup would not have offered <code>Halt</code> as a target, precisely to keep the reaction unique.</p>
+</div>
+
+<p><a href="part-4-designing-correct-controllers.html#s4">&#8592; Back to R3 in Part&nbsp;IV</a></p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="r4"><span class="num">4.</span> R4 — No orphan exit zones</h2>
+
+<div class="contract-box">
+<p><span class="label">R4 — No orphan exit zones.</span> No exit zone refers to a component source state that no longer exists in the Assembly. An orphan exit zone is stale structure left by a model change, and must be removed rather than left uncovered.</p>
+</div>
+
+<h3>Why it matters</h3>
+
+<p>An exit zone is defined relative to a component transition—an autonomous step from a specific component source state. Edit the Assembly (delete a component state, rename it, restructure a machine) and an exit zone that referred to the old state can survive as a <em>stale</em> reference: it no longer corresponds to any boundary the Assembly can actually cross. This is a different failure from R2. An <em>uncovered</em> exit zone is real but unhandled; an <em>orphan</em> exit zone is no longer real. Covering it would be meaningless—there is nothing to react to—so the remedy is to remove or repair the stale reference, usually by fixing the model that drifted underneath it.</p>
+
+<div class="warning">
+<p><strong>Failure mode.</strong> <strong>Orphan exit zone</strong> — the exit zone's component source state is missing after a structural change. The row is shown red and the state's status is problematic, but the fix is deletion/repair, not a new reaction.</p>
+</div>
+
+<div class="note">
+<p><strong>In PWSEditor.</strong> Orphan exit zones are shown red like uncovered ones, but the Controller Report keeps them in a separate <em>Orphan Exit Zones</em> section, precisely so the two are not confused: one calls for a reaction, the other for cleanup. Internal (grey) exit zones, by contrast, are excluded from these obligations altogether—they are shown for explanation, not enforcement.</p>
+</div>
+
+<div class="example">
+<p><strong>Micro-example.</strong> Suppose the cover machine is refactored and its <code>Closed</code> state is replaced by a differently named state. An exit zone that was computed against the old <code>Closed</code> transition now points at a source state the Assembly no longer has: it becomes orphan. No autonomous reaction can sensibly cover it; the correct move is to recompute against the new machine and drop the stale zone.</p>
+</div>
+
+<p><a href="part-4-designing-correct-controllers.html#s4">&#8592; Back to R4 in Part&nbsp;IV</a></p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="tool"><span class="num">5.</span> In PWSEditor: reading exit zones, adding reactions</h2>
+
+<p>If File&nbsp;1's workflow was a round trip between an annotation editor and a dashboard, File&nbsp;2's is a reading of the exit-zone rows followed by the addition of reactions until they clear:</p>
+
+<div class="step-grid">
+  <div class="step-num">1</div><div>Read the state's exit-zone rows. External, unhandled zones are red (R2); orphan zones are red but belong to a separate report section (R4); internal grey zones carry no obligation.</div>
+  <div class="step-num">2</div><div>Cover a red external zone by dragging an autonomous guard-triggered transition from the source (<code>Cmd/Ctrl&nbsp;+&nbsp;drag</code>). The popup offers only eligible targets, and hides those already handled—so the same gesture that covers the zone (R2) also keeps the reaction unique (R3).</div>
+  <div class="step-num">3</div><div>Give the reaction an action if the boundary must be repaired on the way out (for example <code>⟨laser.off⟩</code> as a fail-safe). The zone turns green.</div>
+  <div class="step-num">4</div><div>If a zone is orphan, do not cover it—recompute against the current Assembly and remove the stale reference.</div>
+</div>
+
+<p>Part&nbsp;VI walks the Cover–Laser controller through exactly this: its Figures show the exit-zone rows turning from red to green as each reaction is added, and the state dashboards moving to well-formed. Here the point is the counterpart to File&nbsp;1: instead of building semantics from incoming transitions, you defend it with outgoing autonomous ones—covering every boundary once, and only the boundaries that are real.</p>
+
+<div class="note">
+<p>The final companion note closes the loop begun here: once every state is reachable and no configuration can get stuck—<em>Keeping the controller alive: reachability, deadlock, and the fail-safe exception</em> (rules R7–R8)—the reactions of this note are what an exit into a fail-safe sink actually relies on.</p>
+</div>
+
+<p style="margin-top:2rem; padding-top:1rem; border-top:1px solid var(--border); font-size:0.95em;">
+<a href="part-4-designing-correct-controllers.html" style="color:var(--accent); text-decoration:none; font-weight:600;">&#8592; Return to Part&nbsp;IV</a>
+&nbsp;&nbsp;·&nbsp;&nbsp;
+<a href="part-4-rules-semantics.html" style="color:var(--accent); text-decoration:none; font-weight:600;">File&nbsp;1 — Injecting Semantics &#8594;</a>
+</p>
+
+</div>
+</body>
+</html>

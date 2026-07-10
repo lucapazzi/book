@@ -466,6 +466,24 @@
     left: 0;
     color: var(--red);
   }
+
+  /* Code / algorithm block (shared) */
+  pre.algorithm, .algorithm {
+    font-family: 'Source Code Pro', 'Menlo', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+    background: var(--code-bg, #f5f3ee);
+    border: 1px solid var(--border, #d4d0c8);
+    border-left: 4px solid var(--accent, #2d5016);
+    border-radius: 0 4px 4px 0;
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    overflow-x: auto;
+    white-space: pre;
+    color: #26324a;
+    -moz-tab-size: 2;
+    tab-size: 2;
+  }
 </style>
 </head>
 <body>
@@ -477,190 +495,247 @@
 </h1>
 
 <p class="intro">
-Part III showed how each controller state carries explicit semantics: a set of Assembly configurations it is supposed to represent. But how does the designer actually build a controller that matches this semantics? Part II and III posed the problem; this part provides the solution. Rather than designing first and verifying afterwards, the PWS methodology inverts the process: semantics guides design from the start. The controller emerges as the mechanism that realizes intended semantic properties, not as a finished artifact to be validated. This is the Correct-by-Construction philosophy.
+Parts II and III assembled the semantic machinery: an Assembly of interacting components, a controller whose every state carries a <em>specified semantics</em> <code>Sem(s)</code>, and an inductively computed <em>obtained semantics</em> <code>Conf(s)</code>. What remains is the discipline that turns this machinery into a method—the set of <strong>local conditions</strong> a controller must satisfy, re-checked continuously as it is built, so that correctness is <em>maintained</em> by construction rather than established after the fact. This part states those conditions. After a compact recap it introduces the design cycle, shows how the reactive space of a state is computed, and then presents the Correct-by-Construction rules that PWSEditor enforces, closing with the notion of a well-formed controller.
 </p>
 
 <div class="toc">
   <div class="toc-title">Contents</div>
   <ol>
-    <li><a href="#s1">From behaviour to semantics</a></li>
-    <li><a href="#s2">Declaring the intended behaviour</a></li>
-    <li><a href="#s3">Constructing behaviour</a></li>
-    <li><a href="#s4">The design cycle</a></li>
-    <li><a href="#s5">Autonomous evolution</a></li>
-    <li><a href="#s6">Semantic repair</a></li>
-    <li><a href="#s7">Reactive spaces</a></li>
-    <li><a href="#s8">Well-formed controllers</a></li>
+    <li><a href="#s1">Where we stand: two semantics and two duties</a></li>
+    <li><a href="#s2">The design cycle</a></li>
+    <li><a href="#s3">Computing the reactive space</a></li>
+    <li><a href="#s4">The Correct-by-Construction rules</a></li>
+    <li><a href="#s5">Well-formed controllers</a></li>
   </ol>
 </div>
 
 <hr>
 
 <!-- ============================================================ -->
-<h2 id="s1"><span class="num">1.</span> From behaviour to semantics</h2>
+<h2 id="s1"><span class="num">1.</span> Where we stand: two semantics and two duties</h2>
 
-<p class="epigraph">A controller is not designed by drawing states. It is designed by progressively realizing their intended semantics.</p>
+<p>The material of Parts II–III can be compressed into two ideas, both of which this part now puts to work. <em>Repetita iuvant</em>: the recap is deliberately brief, because everything here was already established—what changes is that we are about to treat it as an operational discipline rather than a description.</p>
 
-<p>Traditional state-machine design usually follows a well-established pattern:</p>
+<p><strong>Two semantics per state.</strong> Every controller state <code>s</code> is associated with two sets of Assembly configurations. The <span class="label">specified semantics</span> <code>Sem(s)</code> is <em>declared</em> by the designer: the constraint domain the state is allowed to represent. The <span class="label">obtained semantics</span> <code>Conf(s)</code> is <em>computed</em> from the controller structure by the inductive construction of Part III: the configurations actually reachable while the controller sits in <code>s</code>. Verification compares the two, and the safety-relevant direction of that comparison is the inclusion</p>
 
-<ol>
-  <li>Draw states and transitions.</li>
-  <li>Complete the behaviour description.</li>
-  <li>Afterwards, ask whether the resulting system satisfies the intended requirements.</li>
+<div class="constraint">Conf(s) ⊆ Sem(s)</div>
+
+<p>which says the system never reaches a configuration the state was not allowed to admit. When <code>Sem(s)</code> is chosen to exclude the dangerous configurations, this inclusion <em>is</em> a safety property.</p>
+
+<p><strong>Two duties for the controller.</strong> A controller must simultaneously <span class="label">drive</span>—use event-triggered transitions with actions to push the Assembly toward its intended configurations—and <span class="label">react</span>—use guard-triggered transitions to answer autonomous evolution that would otherwise carry the Assembly out of <code>Sem(s)</code>. A controller that only drives is unsafe under autonomous change; one that only reacts never makes progress. Part III, Figure&nbsp;5.1 showed the reactive case as two successive moves between possible worlds: a <em>spontaneous</em> move out of the semantics, followed by an <em>induced</em> guard-triggered move that restores consistency.</p>
+
+<p>Because the same objects appear in the theory (Part III), in the rules below, and in the PWSEditor dashboards (Part VI) under slightly different names, it is worth fixing the correspondence once:</p>
+
+<table>
+  <tr>
+    <th>Concept</th>
+    <th>This book</th>
+    <th>PWSEditor</th>
+    <th>Origin</th>
+    <th>Meaning</th>
+  </tr>
+  <tr>
+    <td>Specified semantics</td>
+    <td><code>Sem(s)</code></td>
+    <td><code>CS</code></td>
+    <td>declared by the designer</td>
+    <td>constraint domain the state may represent</td>
+  </tr>
+  <tr>
+    <td>Obtained semantics</td>
+    <td><code>Conf(s)</code></td>
+    <td><code>SS</code> / <code>Acc</code></td>
+    <td>computed (inductive fixed point)</td>
+    <td>configurations actually reachable in <code>s</code></td>
+  </tr>
+  <tr>
+    <td>Reactive space</td>
+    <td><code>RS(s)</code></td>
+    <td><code>RS</code> / exit zones</td>
+    <td>computed</td>
+    <td>autonomous successors that leave <code>Sem(s)</code></td>
+  </tr>
+</table>
+
+<p>The third row—the reactive space—was introduced in Part III and its treatment deferred to here. Section&nbsp;3 makes it precise; the rules of Section&nbsp;4 then rest on it.</p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s2"><span class="num">2.</span> The design cycle</h2>
+
+<p>Correct-by-Construction design is an iterative loop in which each step has an immediate, observable semantic consequence. The designer never leaves the loop with an unexplained inconsistency: every edit is followed by a recomputation, and every violated condition is surfaced at once.</p>
+
+<ol class="cycle-list">
+  <li data-step="1"><strong>Specify.</strong> Declare <code>Sem(s)</code> for each controller state—the constraint domain it must represent—before wiring the transitions that reach it.</li>
+  <li data-step="2"><strong>Construct.</strong> Introduce transitions: <em>driving</em> transitions (event-triggered, carrying actions) that advance the Assembly, and <em>reactive</em> transitions (guard-triggered) that answer autonomous evolution.</li>
+  <li data-step="3"><strong>Compute.</strong> Recompute the obtained semantics <code>Conf(s)</code> and the reactive space <code>RS(s)</code> from the current structure, as the least fixed point of Part III.</li>
+  <li data-step="4"><strong>Compare.</strong> Check <code>Conf(s)</code> against <code>Sem(s)</code>, and inspect <code>RS(s)</code>: which autonomous successors leave the declared domain and thus demand a reaction.</li>
+  <li data-step="5"><strong>Repair.</strong> Cover the exposed exit zones with reactive transitions; correct guards and actions that no longer match the semantics.</li>
+  <li data-step="6"><strong>Verify.</strong> Confirm the local obligations of Section&nbsp;4 hold on every state.</li>
+  <li data-step="7"><strong>Repeat</strong> until <code>Conf(s)</code> and <code>Sem(s)</code> coincide on every state and no obligation is outstanding.</li>
 </ol>
 
-<p>This workflow separates design from verification: behaviour comes first, correctness comes later.</p>
+<p>The contrast with the classical <em>design&nbsp;→ then&nbsp;verify</em> workflow is not merely one of ordering. Because each condition is <strong>local</strong>—it constrains a single state or a single transition—it can be re-evaluated after every edit. In PWSEditor this recomputation is continuous (<code>recalculateSemantics()</code> runs after each change), so correctness is not a phase but a property held invariant throughout construction. Review then focuses on the explicit list of unmet obligations rather than on ad-hoc inspection.</p>
 
-<p>PWS follows the opposite philosophy. <strong>The meaning of every controller state is declared before the controller itself is completed.</strong> The semantics therefore becomes the primary design artifact. The controller is merely the mechanism used to realize that semantics.</p>
-
-<blockquote>
-<p><strong>This inversion of perspective is the key idea underlying Correct-by-Construction.</strong> Design and verification are no longer separate phases. They become integrated into a single iterative process where semantic constraints guide every design decision.</p>
-</blockquote>
+<div class="note">
+<p>The loop is monotone in the sense of Part III: computing <code>Conf</code> and <code>RS</code> always terminates at a fixed point. What is <em>not</em> automatic is that the fixed point satisfies the obligations—that is the designer's work, and the subject of the next two sections.</p>
+</div>
 
 <hr>
 
 <!-- ============================================================ -->
-<h2 id="s2"><span class="num">2.</span> Declaring the intended behaviour</h2>
+<h2 id="s3"><span class="num">3.</span> Computing the reactive space</h2>
 
-<p>The design process begins with a crucial step: <strong>associating every controller state with its specified semantics.</strong></p>
+<p>Driving transitions are chosen by the designer; autonomous transitions are not. Sensors flip, doors swing, timers expire—these are component transitions the controller does not command, yet they move the Assembly from one configuration to another while the controller remains in the same state. The reactive space collects exactly those autonomous moves that matter.</p>
 
-<p>These semantic constraints describe which Assembly configurations are considered compatible with each controller state. For a Cover–Laser assembly, for example:</p>
+<div class="formal">
+<p>Let <code>s</code> be a controller state with obtained semantics <code>Conf(s)</code>, and let <code>⤳</code> denote a single autonomous component transition. The <strong>reactive space</strong> of <code>s</code> is</p>
+<p style="text-align:center;"><code>RS(s) = { c′ | c ∈ Conf(s),  c ⤳ c′,  c′ ∉ Sem(s) }</code></p>
+<p>that is, the set of configurations reachable by one autonomous step from a currently reachable, in-domain configuration, and landing <em>outside</em> the declared constraints. Each such <code>c′</code> is an <strong>exit zone</strong> of <code>s</code>.</p>
+</div>
 
-<ul>
-  <li>The <code>Idle</code> state might specify <code>(laser.Off, cover.Closed)</code> — where <code>laser.Off</code> means "laser equals Off" and <code>cover.Closed</code> means "cover equals Closed"</li>
-  <li>The <code>Ready</code> state might specify <code>(laser.Off, cover.Open)</code></li>
-  <li>The <code>Working</code> state might specify <code>(laser.On, cover.Closed)</code></li>
-</ul>
+<p>The condition <code>c′ ∉ Sem(s)</code> is what makes an exit zone relevant. An autonomous step whose target still satisfies <code>Sem(s)</code> is harmless drift: the state already admits it, and no reaction is required. An autonomous step that leaves <code>Sem(s)</code> breaks the correspondence between the controller state and the Assembly, and must be answered. PWSEditor draws this distinction visually, treating drift that stays within the reachable internal configurations as an <em>internal</em> (grey) exit zone that carries no obligation, and reserving red for the <em>external</em> exit zones that do.</p>
 
-<p>At this stage, the controller may still contain very few transitions. The objective is not yet to describe the behaviour in detail. Instead, it is to <strong>describe the intended meaning of each state.</strong> The semantics acts as a behavioural contract: a promise that certain configurations will be reached and others will be avoided.</p>
+<h3>An algorithm for RS(s)</h3>
 
-<blockquote>
-<p>This declaration marks a profound shift in design methodology. The designer is forced to be explicit about what each state means <em>before</em> implementing the transitions that lead to it.</p>
-</blockquote>
+<p>The definition is already an algorithm. To obtain <code>RS(s)</code>, enumerate the reachable configurations of the state, push each of them through every autonomous transition available to it, and keep the successors that violate the state's constraints. In pseudocode:</p>
 
-<hr>
+<pre class="algorithm">
+computeReactiveSpace(s):
+    RS ← ∅
+    for each c in Conf(s):                  # reachable, in-domain configurations
+        for each autonomous transition τ enabled at c:
+            c′ ← apply(τ, c)                # spontaneous successor
+            if c′ ∉ Sem(s):                 # τ left the declared domain
+                RS ← RS ∪ { c′ }            # c′ is an (external) exit zone
+    return RS
+</pre>
 
-<!-- ============================================================ -->
-<h2 id="s3"><span class="num">3.</span> Constructing behaviour</h2>
+<p>The procedure is <strong>effectively computable</strong>, and cheaply so. <code>Conf(s)</code> is finite—it is the least fixed point computed in Part III over the finite lattice of Assembly configurations; each component exposes finitely many autonomous transitions, so the inner loop is finite; and the test <code>c′ ∉ Sem(s)</code> is a single constraint evaluation. The two nested loops therefore terminate, and <code>RS(s)</code> is finite, computed in <code>O(|Conf(s)| · d)</code> constraint checks, where <code>d</code> bounds the autonomous out-degree of a configuration. PWSEditor performs exactly this computation for every state inside <code>recalculateSemantics()</code>, refining it by reclassifying successors that remain internally reachable as grey internal exit zones.</p>
 
-<p>Once the intended semantics has been declared, controller transitions are progressively introduced.</p>
+<div class="example">
+<p><strong>Example: Cover–Laser.</strong> Take the state <code>Work</code> with <code>Sem(Work) = {(Closed, On)}</code>. The only autonomous transition available at <code>(Closed, On)</code> is the cover opening, <code>cover: Closed ⤳ Open</code>, which yields <code>(Open, On)</code>. Since <code>(Open, On) ∉ Sem(Work)</code>, this configuration is an exit zone: <code>RS(Work) = {(Open, On)}</code>. It is precisely the spontaneous move of Part III, Figure&nbsp;5.1.</p>
+</div>
 
-<p>Each transition contributes new Assembly configurations to its destination state. Consequently, <strong>controller transitions are not merely graphical connections.</strong> Each transition represents a semantic transformation: it expands the set of configurations reachable in the destination state.</p>
+<p>An exit zone is thus not an error but an <strong>obligation</strong>: a boundary condition the controller is required to answer. Figure&nbsp;3.1 shows what discharging it looks like—the same state before and after a covering reaction is added.</p>
 
-<p>After every design step, the obtained semantics can be recomputed. The designer immediately observes the semantic consequences of the newly introduced transition. Design therefore becomes <strong>an iterative dialogue between the controller structure and its semantics.</strong></p>
-
-<p>Instead of completing a design and then discovering violations of requirements, the designer learns the consequences of each choice as soon as it is made. Semantic inconsistencies are detected early, when modifications are still easy to introduce.</p>
-
-<hr>
-
-<!-- ============================================================ -->
-<h2 id="s4"><span class="num">4.</span> The design cycle</h2>
-
-<p>The complete Correct-by-Construction methodology can be summarized by a simple iterative process:</p>
-
-<ol class="cycle-list" data-step="1">
-  <li data-step="1"><strong>Specify</strong> the intended semantics for each controller state.</li>
-  <li data-step="2"><strong>Construct</strong> controller transitions that drive the Assembly.</li>
-  <li data-step="3"><strong>Compute</strong> the obtained semantics from the controller structure.</li>
-  <li data-step="4"><strong>Compare</strong> obtained and specified semantics.</li>
-  <li data-step="5"><strong>Identify</strong> semantic inconsistencies and unintended behaviours.</li>
-  <li data-step="6"><strong>Introduce</strong> repair transitions to handle unexpected evolution.</li>
-  <li data-step="7"><strong>Verify</strong> the local obligations governing reactive behaviour.</li>
-  <li data-step="8"><strong>Repeat</strong> until both semantics coincide.</li>
-</ol>
-
-<blockquote>
-<p><strong>Correctness is therefore not verified after design. It progressively emerges during design.</strong> This design philosophy constitutes the central contribution of the PWS methodology.</p>
-</blockquote>
-
-<hr>
-
-<!-- ============================================================ -->
-<h2 id="s5"><span class="num">5.</span> Autonomous evolution</h2>
-
-<p>Real systems continue to evolve even when the controller remains in the same state. Sensors change value. Mechanical devices move. Timeouts expire. Environmental conditions vary.</p>
-
-<p>These autonomous transitions may invalidate the semantics associated with the current controller state. We have already encountered this problem in Part III: the Cover might autonomously change from <code>Closed</code> to <code>Open</code> while the controller is still in a state that expects <code>cover.Closed</code>.</p>
-
-<p>Autonomous evolution creates a new design requirement. The controller must accomplish <strong>two different tasks:</strong></p>
-
-<ul>
-  <li><strong>Drive:</strong> Actively move the Assembly towards its intended behaviour.</li>
-  <li><strong>React:</strong> Continuously respond to autonomous changes that may compromise semantic consistency.</li>
-</ul>
-
-<p>A controller that only drives but does not react will not remain correct in the presence of autonomous evolution. Conversely, a controller that only reacts but cannot drive will never make progress towards its goals. Both capabilities are essential.</p>
-
-<hr>
-
-<!-- ============================================================ -->
-<h2 id="s6"><span class="num">6.</span> Semantic repair</h2>
-
-<p>Whenever autonomous evolution produces an Assembly configuration that no longer belongs to the semantics of the current controller state, the controller must react.</p>
-
-<p>Its objective is not simply to execute another transition. <strong>Its objective is to restore consistency between</strong></p>
-
-<ul>
-  <li><strong>the current controller state,</strong> and</li>
-  <li><strong>the current Assembly configuration.</strong></li>
-</ul>
-
-<p>Controller transitions triggered by observed state changes therefore become <span class="label">semantic repair mechanisms.</span> The controller continuously maintains the correspondence between its own state and the actual state of the Assembly.</p>
-
-<p>This is a fundamentally different role from the driving transitions discussed earlier. Repair transitions are reactive: they respond to events, not to the designer's intention to progress. They restore an invariant that must hold at all times: <em>every reachable configuration must belong to the semantics of the current controller state.</em></p>
-
-<blockquote>
-<p>Design complexity increases significantly when repair transitions must be introduced. The designer can no longer assume that the controller can ignore autonomous changes. Every controller state must account for all possible autonomous evolution.</p>
-</blockquote>
+<figure>
+<svg viewBox="0 0 820 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="An exit zone as an obligation: uncovered (not well-formed) versus covered (well-formed)" style="width:100%;height:auto;background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+ <defs>
+  <marker id="p4-g" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2d5016"/></marker>
+ </defs>
+ <!-- Panel A: before (red) -->
+ <rect x="24" y="40" width="326" height="176" rx="8" fill="#fff" stroke="#8b1a1a" stroke-width="1.5"/>
+ <path d="M24,46 a6,6 0 0 1 6,-6 h314 a6,6 0 0 1 6,6 v24 h-326 z" fill="#8b1a1a"/>
+ <text x="187" y="63" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-weight="700" font-size="15" fill="#fff">Work</text>
+ <text x="44" y="106" font-family="'Source Serif 4',Georgia,serif" font-style="italic" font-size="12" fill="#6a6a72">Sem</text>
+ <text x="130" y="106" font-family="'Source Code Pro',monospace" font-size="14" fill="#1a3a6b">(Closed, On)</text>
+ <text x="44" y="140" font-family="'Source Serif 4',Georgia,serif" font-style="italic" font-size="12" fill="#6a6a72">exit zone</text>
+ <text x="130" y="140" font-family="'Source Code Pro',monospace" font-size="14" fill="#8b1a1a">(Open, On)</text>
+ <text x="252" y="140" font-family="'Source Serif 4',Georgia,serif" font-size="12" fill="#8b1a1a">✗ uncovered</text>
+ <rect x="24" y="168" width="326" height="48" fill="#fdecec"/>
+ <path d="M24,168 h326" stroke="#8b1a1a" stroke-width="1" opacity="0.35"/>
+ <path d="M24,210 a0,0 0 0 0 0,0 v-42 h326 v42 a6,6 0 0 1 -6,6 h-314 a6,6 0 0 1 -6,-6 z" fill="none"/>
+ <text x="187" y="197" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="12.5" font-weight="600" fill="#8b1a1a">R2 fails — not well-formed</text>
+ <!-- repair arrow -->
+ <path d="M356,128 H462" fill="none" stroke="#2d5016" stroke-width="2.5" marker-end="url(#p4-g)"/>
+ <text x="409" y="104" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="12" font-weight="600" fill="#2d5016">add reaction</text>
+ <text x="409" y="150" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="10.5" fill="#2d5016">[cover.Open] ⟨laser.off⟩</text>
+ <!-- Panel B: after (green) -->
+ <rect x="470" y="40" width="326" height="176" rx="8" fill="#fff" stroke="#2d5016" stroke-width="1.5"/>
+ <path d="M470,46 a6,6 0 0 1 6,-6 h314 a6,6 0 0 1 6,6 v24 h-326 z" fill="#2d5016"/>
+ <text x="633" y="63" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-weight="700" font-size="15" fill="#fff">Work</text>
+ <text x="490" y="106" font-family="'Source Serif 4',Georgia,serif" font-style="italic" font-size="12" fill="#6a6a72">Sem</text>
+ <text x="576" y="106" font-family="'Source Code Pro',monospace" font-size="14" fill="#1a3a6b">(Closed, On)</text>
+ <text x="490" y="140" font-family="'Source Serif 4',Georgia,serif" font-style="italic" font-size="12" fill="#6a6a72">exit zone</text>
+ <text x="576" y="140" font-family="'Source Code Pro',monospace" font-size="14" fill="#2d5016">(Open, On) → Idle</text>
+ <text x="490" y="160" font-family="'Source Serif 4',Georgia,serif" font-size="12" fill="#2d5016">✓ covered</text>
+ <rect x="470" y="168" width="326" height="48" fill="#eaf3e6"/>
+ <path d="M470,168 h326" stroke="#2d5016" stroke-width="1" opacity="0.35"/>
+ <text x="633" y="197" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="12.5" font-weight="600" fill="#2d5016">R2 holds — well-formed</text>
+</svg>
+<figcaption><strong>Figure 3.1</strong> &mdash; An exit zone is an obligation. <strong>Left:</strong> state <code>Work</code> has the exit zone <code>(Open, On)</code> in its reactive space, but no autonomous reaction covers it; the coverage rule (R2) fails and the state is not well-formed. <strong>Right:</strong> after adding the reaction <code>Work → Idle</code> with guard <code>[cover.Open]</code> and action <code>⟨laser.off⟩</code>, the exit zone is covered, R2 holds, and the dashboard turns green. This before/after pair is the <em>repair</em> step of the design cycle, seen at the level of a single obligation.</figcaption>
+</figure>
 
 <hr>
 
 <!-- ============================================================ -->
-<h2 id="s7"><span class="num">7.</span> Reactive spaces</h2>
+<h2 id="s4"><span class="num">4.</span> The Correct-by-Construction rules</h2>
 
-<p>Reactive behaviour naturally introduces a new concept: the <span class="label">Reactive Space</span> of a controller state.</p>
+<p>The obligations below are <strong>local</strong> correctness conditions: each concerns a single state or a single transition, and each can be decided after every edit from the recomputed semantics. They are stated as numbered rules <code>R1</code>–<code>R7</code>, followed by the masking rule <code>R8</code> that governs fail states. Rules <code>R1</code>–<code>R7</code>—except the finer guard-partition checks—are the conditions PWSEditor aggregates into its <em>Controller Report</em>; the remaining checks are live diagram-level diagnostics.</p>
 
-<p>For a controller state <code>X</code>, the Reactive Space consists of <strong>all Assembly configurations that become reachable through autonomous evolution while the controller still remains in <code>X</code>.</strong></p>
+<div class="contract-box">
+<p><span class="label">R1 — Constraint consistency (safety).</span> For every state <code>s</code>, <code>Conf(s) ⊆ Sem(s)</code>: every computed configuration satisfies the declared constraints. When <code>Sem(s)</code> excludes the unsafe configurations, a configuration outside <code>Sem(s)</code> is one the state promised to avoid but can reach—so this inclusion is the model's safety obligation. <em>PWSEditor:</em> reported as <em>Constraint violation</em>.</p>
+<p style="margin-top:.5rem;font-size:.9em;"><a href="part-4-rules-semantics.html#r1" style="color:var(--accent);text-decoration:none;font-weight:600;">Deep dive &#8594; Injecting Semantics · R1</a></p>
+</div>
 
-<p>Some of these configurations remain compatible with the specified semantics of <code>X</code>. Others require controller intervention. Reactive Spaces therefore identify precisely <strong>where repair transitions become necessary.</strong></p>
+<div class="contract-box">
+<p><span class="label">R2 — Exit-zone coverage.</span> Every external exit zone of <code>s</code>—every element of <code>RS(s)</code>—is covered by at least one enabled autonomous reaction. Autonomous evolution <em>will</em> reach these configurations; without a reaction, controller and Assembly fall out of correspondence with no recovery. <em>PWSEditor:</em> reported as <em>Uncovered Exit Zone</em> (masked on fail states, see R8).</p>
+<p style="margin-top:.5rem;font-size:.9em;"><a href="part-4-rules-reactive.html#r2" style="color:var(--accent);text-decoration:none;font-weight:600;">Deep dive &#8594; The Reactive Space · R2</a></p>
+</div>
 
-<p>Rather than representing failures, Reactive Spaces represent situations in which the controller is expected to react:</p>
+<div class="contract-box">
+<p><span class="label">R3 — Reaction determinism.</span> No exit zone enables more than one competing autonomous reaction. Coverage (R2) guarantees a reaction exists; determinism guarantees it is unambiguous. <em>PWSEditor:</em> preserved by the autonomous-guard editor, which hides targets already handled from the same source; not surfaced as a separate report item.</p>
+<p style="margin-top:.5rem;font-size:.9em;"><a href="part-4-rules-reactive.html#r3" style="color:var(--accent);text-decoration:none;font-weight:600;">Deep dive &#8594; The Reactive Space · R3</a></p>
+</div>
 
-<blockquote>
-<p>A Reactive Space reveals the set of configurations from which the controller must be able to move to another state without losing correctness.</p>
-</blockquote>
+<div class="contract-box">
+<p><span class="label">R4 — No orphan exit zones.</span> No exit zone refers to a component source state that no longer exists in the Assembly. An orphan exit zone is stale structure left by a model change, and must be removed rather than left uncovered. <em>PWSEditor:</em> reported as <em>Orphan Exit Zone</em>.</p>
+<p style="margin-top:.5rem;font-size:.9em;"><a href="part-4-rules-reactive.html#r4" style="color:var(--accent);text-decoration:none;font-weight:600;">Deep dive &#8594; The Reactive Space · R4</a></p>
+</div>
 
-<p>The discovery and analysis of Reactive Spaces is where the Correct-by-Construction methodology becomes most powerful. The methodology tells the designer exactly which autonomous transitions must be handled, and which controller transitions are required to handle them.</p>
+<div class="contract-box">
+<p><span class="label">R5 — Guard well-formedness.</span> Every enabled transition carries a meaningful guard (never the placeholder <code>FALSE</code>); an autonomous guard's target is a currently valid exit zone (not <em>orphan</em>); and, within a group of transitions sharing a source state and trigger, the guards are non-empty on the source semantics, mutually non-overlapping (determinism), and jointly complete (totality). Guards <em>select</em> which configurations a transition transfers (Part III, §4), so a stale, empty, overlapping, or incomplete guard set corrupts that selection. <em>PWSEditor:</em> <em>FALSE Guard</em> and <em>Orphan Guard</em> are reported; the partition checks are diagram-level.</p>
+<p style="margin-top:.5rem;font-size:.9em;"><a href="part-4-rules-semantics.html#r5" style="color:var(--accent);text-decoration:none;font-weight:600;">Deep dive &#8594; Injecting Semantics · R5</a></p>
+</div>
+
+<div class="contract-box">
+<p><span class="label">R6 — Action fireability.</span> Every action names a <code>machine.event</code> that is actually fireable from the semantics reaching the transition. An action that is not fireable is a command the component cannot obey. <em>PWSEditor:</em> reported as <em>Orphan Action</em>.</p>
+<p style="margin-top:.5rem;font-size:.9em;"><a href="part-4-rules-semantics.html#r6" style="color:var(--accent);text-decoration:none;font-weight:600;">Deep dive &#8594; Injecting Semantics · R6</a></p>
+</div>
+
+<div class="contract-box">
+<p><span class="label">R7 — Reachability and deadlock-freedom (liveness).</span> No state has empty <code>Conf(s)</code> (no <em>unreachable</em> state); every configuration retains an escape path to some enabled outgoing transition, directly or after internal evolution (no <em>primary deadlock</em>); and it is not additionally stuck internally (no <em>secondary deadlock</em>). <em>PWSEditor:</em> reported as <em>Unreachable States</em>, <em>Primary</em> and <em>Secondary Deadlock</em> (deadlocks masked on fail states, see R8).</p>
+<p style="margin-top:.5rem;font-size:.9em;"><a href="part-4-rules-liveness.html#r7" style="color:var(--accent);text-decoration:none;font-weight:600;">Deep dive &#8594; Keeping the Controller Alive · R7</a></p>
+</div>
+
+<div class="contract-box">
+<p><span class="label">R8 — Fail-state masking (exception).</span> A state explicitly marked <em>fail</em>—a deliberate fail-safe sink—is exempted from the reactive obligations: R2 (uncovered exit zone) and the deadlock clauses of R7 are masked. Consistency (R1), orphan exit zones (R4), guard and action well-formedness (R5, R6) and reachability (R7, unreachable) remain in force. A fail-safe refuge should not be required to react onward or to avoid "deadlock", but it must still be internally consistent and reachable.</p>
+<p style="margin-top:.5rem;font-size:.9em;"><a href="part-4-rules-liveness.html#r8" style="color:var(--accent);text-decoration:none;font-weight:600;">Deep dive &#8594; Keeping the Controller Alive · R8</a></p>
+</div>
+
+<p>The table below lists which obligations enter the Controller Report and which remain diagram-level, using the tool's own names.</p>
+
+<table>
+  <tr><th>Rule</th><th>Obligation (PWSEditor)</th><th>Condition (informal)</th><th>Controller Report</th></tr>
+  <tr><td>R1</td><td>Constraint violation</td><td><code>Conf(s) ⊆ Sem(s)</code></td><td>Yes</td></tr>
+  <tr><td>R2</td><td>Uncovered exit zone</td><td>each exit zone has ≥ 1 reaction</td><td>Yes (except fail)</td></tr>
+  <tr><td>R3</td><td>Autonomous determinism</td><td>≤ 1 reaction per exit zone</td><td>Editor-preserved</td></tr>
+  <tr><td>R4</td><td>Orphan exit zone</td><td>no stale exit zones</td><td>Yes</td></tr>
+  <tr><td>R5</td><td>FALSE / Orphan guard</td><td>guard meaningful and valid</td><td>Yes</td></tr>
+  <tr><td>R5</td><td>Guard partition</td><td>non-empty, non-overlapping, complete</td><td>Diagram-level</td></tr>
+  <tr><td>R6</td><td>Orphan action</td><td>action fireable from source semantics</td><td>Yes</td></tr>
+  <tr><td>R7</td><td>Unreachable state</td><td><code>Conf(s) ≠ ∅</code></td><td>Yes</td></tr>
+  <tr><td>R7</td><td>Primary / secondary deadlock</td><td>every configuration keeps an escape path</td><td>Yes (except fail)</td></tr>
+</table>
 
 <hr>
 
 <!-- ============================================================ -->
-<h2 id="s8"><span class="num">8.</span> Well-formed controllers</h2>
+<h2 id="s5"><span class="num">5.</span> Well-formed controllers</h2>
 
-<p>Not every controller can be analysed using the methodology introduced in this part. Before semantic verification becomes meaningful, the controller must satisfy a collection of <span class="label">structural requirements.</span></p>
+<p>A controller is <span class="label">well-formed</span> when every state satisfies rules <code>R1</code>–<code>R7</code>, with <code>R8</code> relaxing the reactive obligations exactly on the states explicitly marked as fail. This is the condition under which PWSEditor's report reads <em>CONTROLLER IS WELL-FORMED</em>.</p>
 
-<p>These requirements are expressed by the <span class="label">Well-Formedness Rules.</span> Together, they guarantee that:</p>
+<p>Well-formedness is not decoration added to a finished design; it is the <strong>precondition</strong> under which the semantic analysis is meaningful at all. The obtained semantics, the reactive space, and the comparison with the specified semantics are only trustworthy once the rules hold: a controller that violates them may still execute, but its semantics cannot be analysed by this method—only syntactic checks would remain, and the tool's guarantees would collapse to those.</p>
 
-<ul class="check-list">
-  <li>state semantics are well-defined,</li>
-  <li>obtained semantics are computable,</li>
-  <li>reactive situations are completely handled,</li>
-  <li>semantic ambiguities cannot arise.</li>
-</ul>
+<p>Two properties make the notion practical. It is <strong>local</strong>: every rule constrains a single state or transition, so well-formedness decomposes into independently checkable conditions. And it is <strong>incremental</strong>: because those conditions are re-evaluated after every edit, the global property is <em>held</em> throughout construction rather than <em>proved</em> at the end. This is precisely what "correct by construction" means operationally—correctness is an invariant of the editing process, not a verdict pronounced over a completed artifact.</p>
 
-<p>The Well-Formedness Rules therefore characterize <strong>the class of controllers for which Correct-by-Construction applies.</strong></p>
+<div class="note">
+<p>Well-formedness is also the hinge to Part&nbsp;V. Once a controller together with its directly controlled Assembly is well-formed, it can be abstracted into a component with a contract, and the same discipline applies one level up. Local well-formedness at every level is what lets correctness <em>compose</em> along the controller hierarchy—the subject of compositional verification.</p>
+</div>
 
-<p>These rules are not arbitrary constraints imposed from outside. Rather, they are the minimal requirements needed to ensure that the semantic model is coherent and the design cycle can proceed without ambiguity. A controller that violates the rules may still execute correctly, but its semantics cannot be analyzed using the PWS methodology.</p>
-
-<blockquote>
-<p>Well-formedness ensures that the designer can rely on the semantic analysis performed by PWSEditor. Without these rules, the tool's guarantees would be limited to syntactic checks, and semantic properties could not be verified.</p>
-</blockquote>
-
-<hr>
-
-<p style="margin-top: 3rem; font-size: 0.95rem; color: #555; border-top: 1px solid var(--border); padding-top: 1rem;">
-The Correct-by-Construction methodology transforms controller design from an art into a discipline. By making semantics explicit and central, it provides a systematic way to build reactive controllers whose correctness emerges from the design process itself, rather than being established after the fact through exhaustive testing or formal verification.
-</p>
+<p>The Correct-by-Construction methodology thus reframes controller design as the maintenance of a small set of local semantic invariants. By making the specified semantics explicit, computing the obtained semantics and the reactive space after every edit, and holding rules <code>R1</code>–<code>R8</code> at each step, it replaces after-the-fact testing with a construction whose correctness is established as it is built.</p>
 
 </div>
 </body>

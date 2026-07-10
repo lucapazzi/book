@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part IV — Rule Deep Dive 3: Reachability, Deadlock & Fail-Safe</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=Source+Code+Pro:wght@400;500&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --bg: #fafaf8;
+    --accent: #2d5016;
+    --accent-light: #e8f0e2;
+    --red: #8b1a1a;
+    --red-light: #fde8e8;
+    --blue: #1a3a6b;
+    --border: #d4d0c8;
+    --caption-bg: #f0ede6;
+    --code-bg: #f5f3ee;
+    --sidebar: #f0ede6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.72;
+    font-size: 17px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 3rem 2rem 5rem;
+  }
+
+  h1 {
+    font-size: 2.1rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  h1 .part {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  h2 {
+    font-size: 1.45rem;
+    font-weight: 700;
+    margin-top: 3rem;
+    margin-bottom: 1rem;
+    color: var(--text);
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 0.4rem;
+  }
+
+  h2 .num {
+    color: var(--accent);
+    margin-right: 0.3em;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 1.8rem;
+    margin-bottom: 0.6rem;
+    color: var(--blue);
+  }
+
+  p {
+    margin-bottom: 1rem;
+  }
+
+  p.intro {
+    font-size: 1.02rem;
+    line-height: 1.78;
+    color: #2a2a3e;
+    margin-bottom: 1.4rem;
+  }
+
+  strong { font-weight: 600; }
+
+  em { font-style: italic; }
+
+  code {
+    font-family: 'Source Code Pro', 'Menlo', monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+    color: var(--blue);
+  }
+
+  .label {
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .label-red {
+    font-weight: 600;
+    color: var(--red);
+  }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-light);
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.95em;
+  }
+
+  blockquote p:last-child { margin-bottom: 0; }
+
+  blockquote strong { color: var(--text); }
+
+  .warning {
+    border-left: 3px solid var(--red);
+    background: var(--red-light);
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.95em;
+  }
+
+  figure {
+    margin: 2rem 0;
+    text-align: center;
+  }
+
+  figure img {
+    max-width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  figcaption {
+    margin-top: 0.8rem;
+    font-size: 0.88rem;
+    color: #555;
+    line-height: 1.55;
+    text-align: left;
+    background: var(--caption-bg);
+    padding: 0.7rem 1rem;
+    border-radius: 4px;
+    border-left: 3px solid var(--accent);
+  }
+
+  figcaption strong {
+    color: var(--text);
+  }
+
+  ul, ol {
+    margin: 0.8rem 0 1rem 1.5rem;
+  }
+
+  li {
+    margin-bottom: 0.4rem;
+  }
+
+  .cycle-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 1.2rem 0;
+  }
+
+  .cycle-list li {
+    padding-left: 1.8rem;
+    position: relative;
+    margin-bottom: 0.8rem;
+    font-size: 0.98rem;
+  }
+
+  .cycle-list li::before {
+    content: attr(data-step);
+    position: absolute;
+    left: 0;
+    display: inline-block;
+    width: 1.4rem;
+    height: 1.4rem;
+    background: var(--accent);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 1.4rem;
+  }
+
+  table {
+    border-collapse: collapse;
+    margin: 1rem 0 1.5rem;
+    font-size: 0.92em;
+    width: 100%;
+  }
+
+  th {
+    background: var(--accent-light);
+    font-weight: 600;
+    text-align: left;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid var(--border);
+  }
+
+  td {
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .dashboard-table {
+    width: auto;
+    margin: 1rem auto;
+  }
+
+  .dashboard-table td:first-child {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2.5rem 0;
+  }
+
+  .toc {
+    background: var(--sidebar);
+    padding: 1.2rem 1.5rem;
+    border-radius: 6px;
+    margin: 2rem 0;
+  }
+
+  .toc-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 0.6rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .toc ol {
+    margin: 0;
+    padding-left: 1.2rem;
+  }
+
+  .toc li {
+    margin-bottom: 0.3rem;
+    font-size: 0.93rem;
+  }
+
+  .toc a {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .toc a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  .check-list {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .check-list li {
+    padding-left: 1.6rem;
+    position: relative;
+    margin-bottom: 0.6rem;
+  }
+
+  .check-list li::before {
+    content: "\2713";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .constraint {
+    text-align: center;
+    font-size: 1em;
+    margin: 1rem 0;
+    background: var(--code-bg);
+    padding: 0.8rem;
+    border-radius: 4px;
+    font-family: 'Source Code Pro', monospace;
+  }
+
+  .epigraph {
+    font-style: italic;
+    color: #3a3a4a;
+    text-align: center;
+    margin: 2rem 0;
+    padding: 1rem;
+    border-top: 2px solid var(--accent);
+    border-bottom: 2px solid var(--accent);
+  }
+
+
+  .example {
+    border-left: 4px solid #1a3a6b;
+    background: #f0f5ff;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .example p:last-child { margin-bottom: 0; }
+
+  .formal {
+    border-left: 4px solid #2d5016;
+    background: #f5faf0;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+    font-family: 'Source Code Pro', monospace;
+  }
+
+  .formal p:last-child { margin-bottom: 0; }
+
+  .formal .computational-model {
+    border-top: 1px solid var(--accent);
+    border-bottom: 1px solid var(--accent);
+    padding: 0.8rem 0;
+    margin: 1rem 0;
+    background: rgba(45, 80, 22, 0.03);
+  }
+
+  .diagram-notation {
+    border-left: 4px solid #8b1a1a;
+    background: #fef0f0;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .diagram-notation p:last-child { margin-bottom: 0; }
+
+  .note {
+    border-left: 4px solid #1a5ab8;
+    background: #f0f8ff;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .note p:last-child { margin-bottom: 0; }
+
+  .contract-box {
+    border-left: 4px solid var(--accent);
+    background: #f9fbf7;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .contract-box p:last-child { margin-bottom: 0; }
+
+  .hierarchy-tree {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #fafaf8;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+  }
+
+  .step-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.3rem 1rem;
+    margin: 1rem 0;
+  }
+
+  .step-num {
+    font-family: 'Source Code Pro', monospace;
+    font-weight: 500;
+    color: var(--accent);
+    font-size: 0.9em;
+  }
+
+  .eq {
+    text-align: center;
+    font-size: 1.15em;
+    margin: 1rem 0 1.2rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .intro {
+    font-size: 1.05em;
+    color: #333;
+    border-left: 3px solid var(--blue);
+    padding-left: 1.2rem;
+    margin: 1.5rem 0 2rem;
+  }
+
+  .keyboard {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.82em;
+    background: #e8e6e0;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 0.1em 0.45em;
+    box-shadow: 0 1px 0 #b0ada6;
+  }
+
+  .color-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin-right: 4px;
+    vertical-align: middle;
+    border: 1px solid rgba(0,0,0,0.15);
+  }
+
+  .green { background: #2d8b2d; }
+  .red { background: #c62828; }
+  .gold { background: #c8a600; }
+  .grey { background: #999; }
+  .blue-s { background: #1a5ab8; }
+  .amber { background: #e6a800; }
+
+  .error-list {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .error-list li {
+    padding-left: 1.6rem;
+    position: relative;
+    margin-bottom: 0.6rem;
+  }
+
+  .error-list li::before {
+    content: "\26A0";
+    position: absolute;
+    left: 0;
+    color: var(--red);
+  }
+
+  /* Code / algorithm block (shared) */
+  pre.algorithm, .algorithm {
+    font-family: 'Source Code Pro', 'Menlo', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+    background: var(--code-bg, #f5f3ee);
+    border: 1px solid var(--border, #d4d0c8);
+    border-left: 4px solid var(--accent, #2d5016);
+    border-radius: 0 4px 4px 0;
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    overflow-x: auto;
+    white-space: pre;
+    color: #26324a;
+    -moz-tab-size: 2;
+    tab-size: 2;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>
+  <span class="part">Part IV — Rule Deep Dive · 3 of 3</span>
+  Keeping the Controller Alive: Reachability, Deadlock &amp; the Fail-Safe Exception
+</h1>
+
+<p class="intro">
+The last companion note treats liveness—the property that the controller keeps moving. It is the most <em>global</em> of the three, because it depends on both directions studied so far: a state must actually be <strong>reached</strong> (which depends on the incoming transitions of File&nbsp;1) and every configuration must be able to <strong>progress</strong> (which depends on the outgoing transitions of File&nbsp;2). Two rules close the loop: <code>R7</code>, which forbids unreachable states and deadlocked configurations, and <code>R8</code>, the deliberate exception that lets a fail-safe sink opt out of the reactive obligations. Where Files&nbsp;1 and 2 were about a single state or a single boundary, this note is about <em>paths</em> through the controller.
+</p>
+
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <ol>
+    <li><a href="#s1">Liveness as a global property</a></li>
+    <li><a href="#r7">R7 — Reachability and deadlock-freedom</a></li>
+    <li><a href="#r8">R8 — The fail-safe exception</a></li>
+    <li><a href="#tool">In PWSEditor: reading liveness on the dashboard</a></li>
+  </ol>
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s1"><span class="num">1.</span> Liveness as a global property</h2>
+
+<p>The rules of the first two notes are <em>local</em> in the strongest sense: R1 judges a single configuration against a single state's constraints, R2 judges a single exit zone. Liveness is different. It asks whether the controller, taken as a graph of states and transitions, lets the system keep going—and that question cannot be answered by looking at one state in isolation.</p>
+
+<p>It has two faces, and each inherits from one of the previous notes. <strong>Reachability</strong> asks whether a state is ever entered at all: a state has a semantics only if some incoming transition delivers a configuration to it, so an unreachable state is a downstream symptom of the guards and actions of File&nbsp;1. <strong>Deadlock-freedom</strong> asks whether, once in a configuration, the system can get out: a configuration must reach an enabled outgoing transition, directly or after an internal component step, and that in turn depends on the driving and reactive transitions of File&nbsp;2. Liveness is thus where the two directions meet (Figure&nbsp;1).</p>
+
+<figure>
+<svg viewBox="0 0 820 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Escape paths: a configuration is live directly, live via an internal step, or deadlocked" style="width:100%;height:auto;background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+ <defs>
+  <marker id="f3-g" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2d5016"/></marker>
+  <marker id="f3-i" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#8a8a8a"/></marker>
+  <marker id="f3-x" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#8b1a1a"/></marker>
+ </defs>
+ <text x="30" y="28" font-family="'Source Serif 4',Georgia,serif" font-size="12" fill="#6a6a72">configurations of a state, and their escape paths</text>
+ <!-- Row 1: direct escape -->
+ <rect x="30" y="46" width="110" height="30" rx="15" fill="#fff" stroke="#2d5016" stroke-width="1.5"/>
+ <text x="85" y="66" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="13" fill="#1a3a6b">c₁</text>
+ <path d="M140,61 H236" fill="none" stroke="#2d5016" stroke-width="2" marker-end="url(#f3-g)"/>
+ <text x="188" y="52" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="10" fill="#2d5016">outgoing transition</text>
+ <rect x="238" y="46" width="120" height="30" rx="8" fill="#eef4e8" stroke="#2d5016" stroke-width="1.5"/>
+ <text x="298" y="66" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="12.5" fill="#2d5016">next state</text>
+ <text x="430" y="66" font-family="'Source Serif 4',Georgia,serif" font-size="12.5" font-weight="600" fill="#2d5016">live — direct escape</text>
+ <!-- Row 2: escape via internal step -->
+ <rect x="30" y="112" width="110" height="30" rx="15" fill="#fff" stroke="#1a3a6b" stroke-width="1.5"/>
+ <text x="85" y="132" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="13" fill="#1a3a6b">c₂</text>
+ <path d="M140,127 H224" fill="none" stroke="#8a8a8a" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#f3-i)"/>
+ <text x="184" y="118" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="10" fill="#8a8a8a">internal ⤳</text>
+ <rect x="226" y="112" width="96" height="30" rx="15" fill="#fff" stroke="#1a3a6b" stroke-width="1.5"/>
+ <text x="274" y="132" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="13" fill="#1a3a6b">c₂′</text>
+ <path d="M322,127 H406" fill="none" stroke="#2d5016" stroke-width="2" marker-end="url(#f3-g)"/>
+ <rect x="408" y="112" width="120" height="30" rx="8" fill="#eef4e8" stroke="#2d5016" stroke-width="1.5"/>
+ <text x="468" y="132" text-anchor="middle" font-family="'Source Serif 4',Georgia,serif" font-size="12.5" fill="#2d5016">next state</text>
+ <text x="600" y="128" font-family="'Source Serif 4',Georgia,serif" font-size="12.5" font-weight="600" fill="#2d5016">live —</text>
+ <text x="600" y="144" font-family="'Source Serif 4',Georgia,serif" font-size="11" fill="#3a3a4a">via internal step</text>
+ <!-- Row 3: deadlock -->
+ <rect x="30" y="178" width="110" height="30" rx="15" fill="#fff" stroke="#8b1a1a" stroke-width="1.5"/>
+ <text x="85" y="198" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="13" fill="#1a3a6b">c₃</text>
+ <path d="M140,193 H206" fill="none" stroke="#8b1a1a" stroke-width="2" marker-end="url(#f3-x)"/>
+ <text x="224" y="199" text-anchor="middle" font-family="'Source Code Pro',monospace" font-size="16" fill="#8b1a1a">✗</text>
+ <text x="250" y="198" font-family="'Source Serif 4',Georgia,serif" font-size="12.5" fill="#8b1a1a">no outgoing transition, no internal move</text>
+ <text x="600" y="198" font-family="'Source Serif 4',Georgia,serif" font-size="12.5" font-weight="600" fill="#8b1a1a">secondary deadlock</text>
+</svg>
+<figcaption><strong>Figure 1</strong> &mdash; Escape paths decide liveness. <strong>c₁</strong> reaches an enabled outgoing transition directly; <strong>c₂</strong> cannot leave immediately but an internal component step takes it to <code>c₂′</code>, which can—both are live. <strong>c₃</strong> has neither a direct escape nor any internal move: a <em>secondary</em> deadlock. A <em>primary</em> deadlock is the weaker failure—no escape path exists—while a secondary deadlock is a primary one that additionally cannot evolve internally at all.</figcaption>
+</figure>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="r7"><span class="num">2.</span> R7 — Reachability and deadlock-freedom</h2>
+
+<div class="contract-box">
+<p><span class="label">R7 — Reachability and deadlock-freedom (liveness).</span> No state has empty <code>Conf(s)</code> (no <em>unreachable</em> state); every configuration retains an escape path to some enabled outgoing transition, directly or after internal evolution (no <em>primary deadlock</em>); and it is not additionally stuck internally (no <em>secondary deadlock</em>).</p>
+</div>
+
+<h3>Reachability</h3>
+
+<p>A controller state is reachable exactly when its computed semantics is non-empty—when some incoming transition actually delivers a configuration to it. An unreachable state is dead structure: it may be drawn, named, and annotated, but the system never enters it, so its constraints and reactions are never exercised. Because <code>Conf(s)</code> is assembled from incoming guards and actions (File&nbsp;1), an unreachable state is usually the downstream sign of a guard that selects nothing, an action that produces nothing, or simply a state no transition points to.</p>
+
+<div class="warning">
+<p><strong>Failure mode.</strong> <strong>Unreachable state</strong> — <code>Conf(s)</code> is empty. Reported under <em>Unreachable States</em>; the dashboard shows a gold/yellow status rather than red, marking it as a structural rather than a safety problem.</p>
+</div>
+
+<h3>Primary deadlock</h3>
+
+<p>A configuration is <em>primary deadlocked</em> when it has no escape path to any enabled outgoing controller transition—neither directly, nor after an internal component evolution to some other configuration that is directly covered. It is a point from which the controller, as wired, can never move on. Whether an escape exists depends on the driving and reactive transitions leaving the state (File&nbsp;2): a missing reaction or a missing driving transition is what strands the configuration.</p>
+
+<div class="warning">
+<p><strong>Failure mode.</strong> <strong>Primary deadlock</strong> — a configuration with no escape path. Reported under <em>Primary Deadlock Configurations</em>; masked on fail states (R8).</p>
+</div>
+
+<h3>Secondary deadlock</h3>
+
+<p>A <em>secondary</em> deadlock is stricter: a configuration that is primary deadlocked <em>and</em> also cannot evolve internally at all. A primary deadlock might still see the components shuffle among themselves without ever reaching an exit; a secondary deadlock is completely frozen—the configuration <code>c₃</code> of Figure&nbsp;1. The distinction matters for diagnosis: a secondary deadlock is an unconditional dead end, whereas a primary one may hide live internal motion that simply never reaches a controller transition.</p>
+
+<div class="warning">
+<p><strong>Failure mode.</strong> <strong>Secondary deadlock</strong> — primary deadlocked and internally stuck. Shown with a red underline on the configuration row and reported under <em>Secondary (Internal) Deadlock Configurations</em>; masked on fail states (R8).</p>
+</div>
+
+<div class="note">
+<p><strong>In PWSEditor.</strong> After each recomputation the editor checks, for every configuration, whether an escape path to some enabled outgoing non-self transition still exists—directly or after internal evolution. Configurations that lose every escape violate the primary-deadlock obligation; those that also cannot move internally violate the secondary one. Unreachable states surface in gold; deadlocks in the dashboard status and the Extended Dashboard, with dedicated Controller-Report sections. The enforcement is incremental: the alarms appear the moment an edit strands a configuration, not at the end.</p>
+</div>
+
+<div class="example">
+<p><strong>Micro-example.</strong> Give the Cover–Laser controller a state <code>Halt</code> with no outgoing transitions, entered as an emergency stop. Every configuration of <code>Halt</code> then has no escape path—each is a primary (and, if the components cannot move either, secondary) deadlock—and any exit zone of <code>Halt</code> is uncovered. Under R2 and R7 the tool reports all of this. But that behaviour is exactly what an emergency stop is <em>supposed</em> to have; the alarms are false positives. This is the situation R8 exists for.</p>
+</div>
+
+<p><a href="part-4-designing-correct-controllers.html#s4">&#8592; Back to R7 in Part&nbsp;IV</a></p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="r8"><span class="num">3.</span> R8 — The fail-safe exception</h2>
+
+<div class="contract-box">
+<p><span class="label">R8 — Fail-state masking (exception).</span> A state explicitly marked <em>fail</em>—a deliberate fail-safe sink—is exempted from the reactive obligations: R2 (uncovered exit zone) and the deadlock clauses of R7 are masked. Consistency (R1), orphan exit zones (R4), guard and action well-formedness (R5, R6) and reachability (R7, unreachable) remain in force.</p>
+</div>
+
+<h3>Why it matters</h3>
+
+<p>Not every dead end is a defect. A fail-safe sink—an emergency stop, a safe park, a halt-and-latch—is a state the controller is <em>meant</em> to enter and stay in. Requiring it to react onward (R2) or to keep an escape path (R7) would contradict its very purpose, and would flood the report with alarms that describe intended behaviour. R8 is the disciplined way to say "this dead end is on purpose": marking a state <em>fail</em> masks exactly the obligations that a terminal refuge should be allowed to break.</p>
+
+<p>What R8 does <strong>not</strong> relax is as important as what it does. A fail-safe state must still be internally consistent—its computed configurations must satisfy its constraints (R1)—must not carry orphan exit zones (R4) or malformed guards and actions (R5, R6), and must still be <em>reachable</em>: a fail-safe state you can never enter is dead structure, not a refuge, and remains flagged. In other words, R8 relaxes the obligations about <em>leaving</em> the state, never those about <em>being</em> a coherent, reachable state.</p>
+
+<div class="warning">
+<p><strong>Caveat.</strong> Fail-state marking is a modelling assertion, not a fix. Masking the deadlock and coverage checks on a state that was <em>not</em> meant to be terminal simply hides real problems. The marking should record a genuine design decision that the state is a fail-safe sink.</p>
+</div>
+
+<div class="note">
+<p><strong>In PWSEditor.</strong> A state is marked through its context menu (<em>Fail state</em>). Marking it masks the uncovered-exit-zone check and the primary and secondary deadlock checks for that state, while orphan guards, orphan actions, constraint violations, orphan exit zones and unreachable-state detection stay active. Exit-zone computation itself is not switched off—only how the selected diagnostics are interpreted and reported changes.</p>
+</div>
+
+<div class="example">
+<p><strong>Micro-example.</strong> Mark the <code>Halt</code> state of the previous example as <em>fail</em>. The uncovered-exit-zone and deadlock alarms disappear, because a halt is allowed to be terminal; but if <code>Halt</code> admitted a configuration outside its constraints (R1), or no transition ever reached it (unreachable), those would still be reported. The refuge is exempt from moving on, not from being well-defined.</p>
+</div>
+
+<p><a href="part-4-designing-correct-controllers.html#s4">&#8592; Back to R8 in Part&nbsp;IV</a></p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="tool"><span class="num">4.</span> In PWSEditor: reading liveness on the dashboard</h2>
+
+<p>Liveness is read, not wired: there is no "liveness annotation" to edit, only the consequences of the transitions built in Files&nbsp;1 and 2, surfaced on the state dashboards.</p>
+
+<div class="step-grid">
+  <div class="step-num">1</div><div>Scan for gold/yellow states—these are unreachable (empty <code>Conf</code>). Trace each back to an incoming guard or action that selects or produces nothing (File&nbsp;1), or to a state no transition points to.</div>
+  <div class="step-num">2</div><div>Scan for problematic states with deadlock details—configurations with no escape path (primary) or additionally frozen (secondary, shown with a red underline). Trace each to a missing driving or reactive transition leaving the state (File&nbsp;2).</div>
+  <div class="step-num">3</div><div>Open the Extended Dashboard for a stranded configuration to see whether an internal step could have carried it to a covered configuration—the difference between a primary and a secondary deadlock.</div>
+  <div class="step-num">4</div><div>Where a dead end is intentional, mark the state <em>Fail state</em> (R8). The reactive and deadlock alarms clear; the consistency and reachability checks remain, so the refuge still has to be well-defined and reachable.</div>
+</div>
+
+<p>This is the sense in which liveness closes the trilogy. It has no machinery of its own: it is the global read-out of the local decisions made in the first two notes. A controller in which every state satisfies R1–R7—with R8 marking the intended exceptions—is well-formed, and only then does the semantic analysis of Part&nbsp;IV become trustworthy. Part&nbsp;VI shows the whole cycle end to end on the Cover–Laser controller, where the dashboards move to green as reachability and escape paths are secured.</p>
+
+<p style="margin-top:2rem; padding-top:1rem; border-top:1px solid var(--border); font-size:0.95em;">
+<a href="part-4-designing-correct-controllers.html" style="color:var(--accent); text-decoration:none; font-weight:600;">&#8592; Return to Part&nbsp;IV</a>
+&nbsp;&nbsp;·&nbsp;&nbsp;
+<a href="part-4-rules-semantics.html" style="color:var(--accent); text-decoration:none; font-weight:600;">File&nbsp;1 — Injecting Semantics</a>
+&nbsp;&nbsp;·&nbsp;&nbsp;
+<a href="part-4-rules-reactive.html" style="color:var(--accent); text-decoration:none; font-weight:600;">File&nbsp;2 — The Reactive Space</a>
+</p>
+
+</div>
+</body>
+</html>

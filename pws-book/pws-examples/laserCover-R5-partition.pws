@@ -1,0 +1,452 @@
+{
+  "formatVersion": 1,
+  "type": "pws-workspace",
+  "controller": {
+    "type": "pws",
+    "name": "laserCover-R5-incomplete",
+    "states": [
+      {
+        "id": 0,
+        "name": "PseudoState",
+        "x": 275,
+        "y": 65,
+        "constraints": {
+          "raw": "ANY",
+          "any": true
+        },
+        "rawConstraintText": "ANY"
+      },
+      {
+        "id": 1,
+        "name": "Idle",
+        "x": 275,
+        "y": 195,
+        "constraints": {
+          "raw": "cover.Open, laser.Off\ncover.Closed, laser.Off",
+          "any": false,
+          "lines": [
+            [
+              {
+                "machineId": "cover",
+                "stateName": "Open"
+              },
+              {
+                "machineId": "laser",
+                "stateName": "Off"
+              }
+            ],
+            [
+              {
+                "machineId": "cover",
+                "stateName": "Closed"
+              },
+              {
+                "machineId": "laser",
+                "stateName": "Off"
+              }
+            ]
+          ]
+        },
+        "rawConstraintText": "cover.Open, laser.Off\ncover.Closed, laser.Off"
+      },
+      {
+        "id": 2,
+        "name": "Work",
+        "x": 500,
+        "y": 195,
+        "constraints": {
+          "raw": "(cover.Closed, laser.On)",
+          "any": false,
+          "lines": [
+            [
+              {
+                "machineId": "cover",
+                "stateName": "Closed"
+              },
+              {
+                "machineId": "laser",
+                "stateName": "On"
+              }
+            ]
+          ]
+        },
+        "rawConstraintText": "(cover.Closed, laser.On)"
+      },
+      {
+        "id": 3,
+        "name": "Fail",
+        "x": 90,
+        "y": 195,
+        "constraints": {
+          "raw": "cover.Open, laser.Off",
+          "any": false,
+          "lines": [
+            [
+              {
+                "machineId": "cover",
+                "stateName": "Open"
+              },
+              {
+                "machineId": "laser",
+                "stateName": "Off"
+              }
+            ]
+          ]
+        },
+        "rawConstraintText": "cover.Open, laser.Off"
+      }
+    ],
+    "transitions": [
+      {
+        "id": "eb192e25-0f4e-4460-986f-55cd09756a96",
+        "source": 1,
+        "target": 2,
+        "autonomous": false,
+        "triggerEvent": "start",
+        "controlPoint": {
+          "x": 388,
+          "y": 195
+        },
+        "enabled": true,
+        "guard": {
+          "type": "basic",
+          "machineId": "cover",
+          "stateName": "Closed"
+        },
+        "actions": [
+          {
+            "machineId": "laser",
+            "event": "on"
+          }
+        ]
+      },
+      {
+        "id": "f7b0218d-a30b-4c6f-b7c7-b9990db17948",
+        "source": 0,
+        "target": 1,
+        "autonomous": false,
+        "triggerEvent": "_init",
+        "controlPoint": {
+          "x": 275,
+          "y": 130
+        },
+        "enabled": true,
+        "guard": {
+          "type": "true"
+        },
+        "actions": []
+      },
+      {
+        "id": "98d7bfa8-87ca-4908-9ce2-3f3147af85ed",
+        "source": 1,
+        "target": 3,
+        "autonomous": false,
+        "triggerEvent": "start",
+        "controlPoint": {
+          "x": 182,
+          "y": 195
+        },
+        "enabled": true,
+        "guard": {
+          "type": "basic",
+          "machineId": "cover",
+          "stateName": "Open"
+        },
+        "actions": []
+      }
+    ],
+    "pseudoState": 0,
+    "events": [
+      "_init",
+      "start"
+    ]
+  },
+  "assembly": {
+    "id": "PWSEditorAssembly",
+    "machines": {
+      "cover": {
+        "machine": {
+          "type": "base",
+          "name": "Cover",
+          "states": [
+            {
+              "id": 0,
+              "name": "PseudoState",
+              "x": 112,
+              "y": 32
+            },
+            {
+              "id": 1,
+              "name": "Open",
+              "x": 95,
+              "y": 115
+            },
+            {
+              "id": 2,
+              "name": "Closed",
+              "x": 315,
+              "y": 115
+            }
+          ],
+          "transitions": [
+            {
+              "id": "171665d6-3cd1-4df1-8a40-093254ab09f1",
+              "source": 0,
+              "target": 2,
+              "autonomous": false,
+              "triggerEvent": "_init",
+              "controlPoint": {
+                "x": 340,
+                "y": 100
+              },
+              "enabled": true
+            },
+            {
+              "id": "ca62ea28-a0dc-4de9-b5f4-248cd6270df2",
+              "source": 0,
+              "target": 1,
+              "autonomous": false,
+              "triggerEvent": "_init",
+              "controlPoint": {
+                "x": 120,
+                "y": 100
+              },
+              "enabled": true
+            },
+            {
+              "id": "ceb93338-0492-498d-af8a-7c07863de602",
+              "source": 1,
+              "target": 2,
+              "autonomous": true,
+              "triggerEvent": "",
+              "controlPoint": {
+                "x": 220,
+                "y": 80
+              },
+              "enabled": true
+            },
+            {
+              "id": "64153c69-9348-46e0-9692-d1c354b8b631",
+              "source": 2,
+              "target": 1,
+              "autonomous": true,
+              "triggerEvent": "",
+              "controlPoint": {
+                "x": 220,
+                "y": 200
+              },
+              "enabled": true
+            }
+          ],
+          "currentState": 1,
+          "pseudoState": 0,
+          "events": [
+            "_init"
+          ]
+        },
+        "annotations": {
+          "pseudoAliases": [
+            {
+              "x": 332,
+              "y": 32
+            }
+          ],
+          "pseudoAliasByTransition": [
+            {
+              "transitionId": "171665d6-3cd1-4df1-8a40-093254ab09f1",
+              "aliasIndex": 0
+            }
+          ]
+        }
+      },
+      "laser": {
+        "machine": {
+          "type": "base",
+          "name": "Laser",
+          "states": [
+            {
+              "id": 0,
+              "name": "PseudoState",
+              "x": 92,
+              "y": 32
+            },
+            {
+              "id": 1,
+              "name": "Off",
+              "x": 75,
+              "y": 115
+            },
+            {
+              "id": 2,
+              "name": "On",
+              "x": 255,
+              "y": 115
+            }
+          ],
+          "transitions": [
+            {
+              "id": "5440b36d-f65a-474a-b075-e460ecec9a33",
+              "source": 1,
+              "target": 2,
+              "autonomous": false,
+              "triggerEvent": "on",
+              "controlPoint": {
+                "x": 180,
+                "y": 100
+              },
+              "triggerOffset": {
+                "x": 172,
+                "y": 92
+              },
+              "enabled": true
+            },
+            {
+              "id": "9d8d2131-d1b2-4c17-b3ec-1ed749efef4d",
+              "source": 2,
+              "target": 1,
+              "autonomous": false,
+              "triggerEvent": "off",
+              "controlPoint": {
+                "x": 180,
+                "y": 180
+              },
+              "triggerOffset": {
+                "x": 171,
+                "y": 172
+              },
+              "enabled": true
+            },
+            {
+              "id": "107bc75e-3866-45f6-9d78-4e6cd77d549f",
+              "source": 0,
+              "target": 1,
+              "autonomous": false,
+              "triggerEvent": "_init",
+              "controlPoint": {
+                "x": 100,
+                "y": 80
+              },
+              "enabled": true
+            }
+          ],
+          "currentState": 1,
+          "pseudoState": 0,
+          "events": [
+            "_init",
+            "off",
+            "on"
+          ]
+        }
+      }
+    },
+    "ltlFormulas": []
+  },
+  "library": {
+    "machines": {}
+  },
+  "annotations": {
+    "showExitZoneMachineIds": true,
+    "showConfigurationUnderlines": true,
+    "initialSemanticsClosureEnabled": false,
+    "groupedTransitionAnnotations": true,
+    "stateDiameter": 50,
+    "stateBorderThickness": 1.0,
+    "stateFontSize": 12.0,
+    "states": [
+      {
+        "stateName": "Idle",
+        "bounds": {
+          "x": 55,
+          "y": 118,
+          "w": 119,
+          "h": 190
+        },
+        "visible": true,
+        "offset": {
+          "x": -245,
+          "y": -102
+        }
+      },
+      {
+        "stateName": "Work",
+        "bounds": {
+          "x": 655,
+          "y": 317,
+          "w": 162,
+          "h": 160
+        },
+        "visible": true,
+        "offset": {
+          "x": 130,
+          "y": 97
+        }
+      },
+      {
+        "stateName": "Fail",
+        "bounds": {
+          "x": 63,
+          "y": 55,
+          "w": 162,
+          "h": 160
+        },
+        "visible": true,
+        "offset": {
+          "x": -52,
+          "y": -165
+        }
+      }
+    ],
+    "transitions": [
+      {
+        "transitionId": "eb192e25-0f4e-4460-986f-55cd09756a96",
+        "guardVisible": false,
+        "actionVisible": false,
+        "semanticsVisible": false,
+        "infoOffset": {
+          "x": 0,
+          "y": -58
+        },
+        "infoSemanticsVisible": false,
+        "infoGuardVisible": true,
+        "infoActionsVisible": true
+      },
+      {
+        "transitionId": "f7b0218d-a30b-4c6f-b7c7-b9990db17948",
+        "guardVisible": false,
+        "actionVisible": false,
+        "semanticsVisible": false,
+        "infoOffset": {
+          "x": 0,
+          "y": -50
+        },
+        "infoSemanticsVisible": false
+      },
+      {
+        "transitionId": "98d7bfa8-87ca-4908-9ce2-3f3147af85ed",
+        "guardVisible": false,
+        "actionVisible": false,
+        "semanticsVisible": false,
+        "infoOffset": {
+          "x": 0,
+          "y": -50
+        },
+        "infoSemanticsVisible": false
+      }
+    ]
+  },
+  "ui": {
+    "windowWidth": 1098,
+    "windowHeight": 782,
+    "mainDivider": 599,
+    "leftDivider": 439,
+    "rightDivider": 441,
+    "assemblyDivider": 246,
+    "showDashboards": true,
+    "showAssemblyComponents": true,
+    "showGrid": true,
+    "snapToGrid": true,
+    "gridSize": 20,
+    "editMode": true,
+    "topCard": "assembly"
+  }
+}

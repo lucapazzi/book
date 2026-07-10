@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part IV — Rule Deep Dive 1: Guards, Actions & Consistency</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=Source+Code+Pro:wght@400;500&display=swap');
+
+  :root {
+    --text: #1a1a2e;
+    --bg: #fafaf8;
+    --accent: #2d5016;
+    --accent-light: #e8f0e2;
+    --red: #8b1a1a;
+    --red-light: #fde8e8;
+    --blue: #1a3a6b;
+    --border: #d4d0c8;
+    --caption-bg: #f0ede6;
+    --code-bg: #f5f3ee;
+    --sidebar: #f0ede6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.72;
+    font-size: 17px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 3rem 2rem 5rem;
+  }
+
+  h1 {
+    font-size: 2.1rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  h1 .part {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  h2 {
+    font-size: 1.45rem;
+    font-weight: 700;
+    margin-top: 3rem;
+    margin-bottom: 1rem;
+    color: var(--text);
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 0.4rem;
+  }
+
+  h2 .num {
+    color: var(--accent);
+    margin-right: 0.3em;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 1.8rem;
+    margin-bottom: 0.6rem;
+    color: var(--blue);
+  }
+
+  p {
+    margin-bottom: 1rem;
+  }
+
+  p.intro {
+    font-size: 1.02rem;
+    line-height: 1.78;
+    color: #2a2a3e;
+    margin-bottom: 1.4rem;
+  }
+
+  strong { font-weight: 600; }
+
+  em { font-style: italic; }
+
+  code {
+    font-family: 'Source Code Pro', 'Menlo', monospace;
+    font-size: 0.88em;
+    background: var(--code-bg);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+    color: var(--blue);
+  }
+
+  .label {
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .label-red {
+    font-weight: 600;
+    color: var(--red);
+  }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-light);
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.95em;
+  }
+
+  blockquote p:last-child { margin-bottom: 0; }
+
+  blockquote strong { color: var(--text); }
+
+  .warning {
+    border-left: 3px solid var(--red);
+    background: var(--red-light);
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.95em;
+  }
+
+  figure {
+    margin: 2rem 0;
+    text-align: center;
+  }
+
+  figure img {
+    max-width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  figcaption {
+    margin-top: 0.8rem;
+    font-size: 0.88rem;
+    color: #555;
+    line-height: 1.55;
+    text-align: left;
+    background: var(--caption-bg);
+    padding: 0.7rem 1rem;
+    border-radius: 4px;
+    border-left: 3px solid var(--accent);
+  }
+
+  figcaption strong {
+    color: var(--text);
+  }
+
+  ul, ol {
+    margin: 0.8rem 0 1rem 1.5rem;
+  }
+
+  li {
+    margin-bottom: 0.4rem;
+  }
+
+  .cycle-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 1.2rem 0;
+  }
+
+  .cycle-list li {
+    padding-left: 1.8rem;
+    position: relative;
+    margin-bottom: 0.8rem;
+    font-size: 0.98rem;
+  }
+
+  .cycle-list li::before {
+    content: attr(data-step);
+    position: absolute;
+    left: 0;
+    display: inline-block;
+    width: 1.4rem;
+    height: 1.4rem;
+    background: var(--accent);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 1.4rem;
+  }
+
+  table {
+    border-collapse: collapse;
+    margin: 1rem 0 1.5rem;
+    font-size: 0.92em;
+    width: 100%;
+  }
+
+  th {
+    background: var(--accent-light);
+    font-weight: 600;
+    text-align: left;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid var(--border);
+  }
+
+  td {
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .dashboard-table {
+    width: auto;
+    margin: 1rem auto;
+  }
+
+  .dashboard-table td:first-child {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2.5rem 0;
+  }
+
+  .toc {
+    background: var(--sidebar);
+    padding: 1.2rem 1.5rem;
+    border-radius: 6px;
+    margin: 2rem 0;
+  }
+
+  .toc-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 0.6rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .toc ol {
+    margin: 0;
+    padding-left: 1.2rem;
+  }
+
+  .toc li {
+    margin-bottom: 0.3rem;
+    font-size: 0.93rem;
+  }
+
+  .toc a {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .toc a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  .check-list {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .check-list li {
+    padding-left: 1.6rem;
+    position: relative;
+    margin-bottom: 0.6rem;
+  }
+
+  .check-list li::before {
+    content: "\2713";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .constraint {
+    text-align: center;
+    font-size: 1em;
+    margin: 1rem 0;
+    background: var(--code-bg);
+    padding: 0.8rem;
+    border-radius: 4px;
+    font-family: 'Source Code Pro', monospace;
+  }
+
+  .epigraph {
+    font-style: italic;
+    color: #3a3a4a;
+    text-align: center;
+    margin: 2rem 0;
+    padding: 1rem;
+    border-top: 2px solid var(--accent);
+    border-bottom: 2px solid var(--accent);
+  }
+
+
+  .example {
+    border-left: 4px solid #1a3a6b;
+    background: #f0f5ff;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .example p:last-child { margin-bottom: 0; }
+
+  .formal {
+    border-left: 4px solid #2d5016;
+    background: #f5faf0;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+    font-family: 'Source Code Pro', monospace;
+  }
+
+  .formal p:last-child { margin-bottom: 0; }
+
+  .formal .computational-model {
+    border-top: 1px solid var(--accent);
+    border-bottom: 1px solid var(--accent);
+    padding: 0.8rem 0;
+    margin: 1rem 0;
+    background: rgba(45, 80, 22, 0.03);
+  }
+
+  .diagram-notation {
+    border-left: 4px solid #8b1a1a;
+    background: #fef0f0;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .diagram-notation p:last-child { margin-bottom: 0; }
+
+  .note {
+    border-left: 4px solid #1a5ab8;
+    background: #f0f8ff;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .note p:last-child { margin-bottom: 0; }
+
+  .contract-box {
+    border-left: 4px solid var(--accent);
+    background: #f9fbf7;
+    padding: 1rem 1.2rem;
+    margin: 1.5rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95em;
+    line-height: 1.68;
+  }
+
+  .contract-box p:last-child { margin-bottom: 0; }
+
+  .hierarchy-tree {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #fafaf8;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+  }
+
+  .step-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.3rem 1rem;
+    margin: 1rem 0;
+  }
+
+  .step-num {
+    font-family: 'Source Code Pro', monospace;
+    font-weight: 500;
+    color: var(--accent);
+    font-size: 0.9em;
+  }
+
+  .eq {
+    text-align: center;
+    font-size: 1.15em;
+    margin: 1rem 0 1.2rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .intro {
+    font-size: 1.05em;
+    color: #333;
+    border-left: 3px solid var(--blue);
+    padding-left: 1.2rem;
+    margin: 1.5rem 0 2rem;
+  }
+
+  .keyboard {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 0.82em;
+    background: #e8e6e0;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 0.1em 0.45em;
+    box-shadow: 0 1px 0 #b0ada6;
+  }
+
+  .color-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin-right: 4px;
+    vertical-align: middle;
+    border: 1px solid rgba(0,0,0,0.15);
+  }
+
+  .green { background: #2d8b2d; }
+  .red { background: #c62828; }
+  .gold { background: #c8a600; }
+  .grey { background: #999; }
+  .blue-s { background: #1a5ab8; }
+  .amber { background: #e6a800; }
+
+  .error-list {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .error-list li {
+    padding-left: 1.6rem;
+    position: relative;
+    margin-bottom: 0.6rem;
+  }
+
+  .error-list li::before {
+    content: "\26A0";
+    position: absolute;
+    left: 0;
+    color: var(--red);
+  }
+
+  /* Code / algorithm block (shared) */
+  pre.algorithm, .algorithm {
+    font-family: 'Source Code Pro', 'Menlo', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+    background: var(--code-bg, #f5f3ee);
+    border: 1px solid var(--border, #d4d0c8);
+    border-left: 4px solid var(--accent, #2d5016);
+    border-radius: 0 4px 4px 0;
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    overflow-x: auto;
+    white-space: pre;
+    color: #26324a;
+    -moz-tab-size: 2;
+    tab-size: 2;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>
+  <span class="part">Part IV — Rule Deep Dive · 1 of 3</span>
+  Injecting Semantics: Guards, Actions &amp; Consistency
+</h1>
+
+<p class="intro">
+This is the first of three companion notes that develop the Correct-by-Construction rules of Part&nbsp;IV in depth, so the chapter itself can stay light. It follows a single thread—<em>how a controller state acquires its semantics</em>. The incoming transitions are the mechanism: their guards <strong>select</strong> which configurations pass, their actions <strong>transform</strong> them, and the accumulated result must stay within the state's declared constraints. Three rules govern this thread: <code>R5</code> (guards), <code>R6</code> (actions) and <code>R1</code> (consistency). Because the very edits that shape a transition reshape the semantics of the states it feeds, transition health and state health are two views of one loop—so this note treats them together.
+</p>
+
+<div class="toc">
+  <div class="toc-title">Contents</div>
+  <ol>
+    <li><a href="#s1">The round trip: transitions make semantics and vice versa</a></li>
+    <li><a href="#r5">R5 — Guards: the selectors</a></li>
+    <li><a href="#r6">R6 — Actions: the transformers</a></li>
+    <li><a href="#r1">R1 — Consistency: the check</a></li>
+    <li><a href="#tool">In PWSEditor: editing and reading the loop</a></li>
+  </ol>
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="s1"><span class="num">1.</span> The round trip: transitions make semantics and vice versa</h2>
+
+<p>Recall the inductive construction of Part&nbsp;III, §4. The obtained semantics <code>Conf(s)</code> is not written by hand; it is <em>assembled</em>. Each incoming transition contributes configurations to its target: a guarded transition first <strong>selects</strong> the subset of the source semantics that satisfies its guard, then—if it carries actions—<strong>transforms</strong> those configurations, and the results accumulate into <code>Conf</code> of the target. The semantics of a state is therefore literally the union of what its incoming guards and actions deliver.</p>
+
+<p>Two consequences drive everything that follows:</p>
+
+<ul>
+  <li>Change a <strong>guard</strong> on an incoming transition and you change <em>which</em> configurations reach the state. Its <code>Conf(s)</code> moves, and with it whether <code>Conf(s) ⊆ Sem(s)</code> still holds.</li>
+  <li>Change an <strong>action</strong> and you change <em>how</em> configurations arrive—again moving <code>Conf(s)</code>.</li>
+</ul>
+
+<p>The dependency runs both ways: an outgoing transition can only select from the configurations that have actually accumulated in <code>Conf(source)</code>. A guard aimed at configurations that never arrive is a dead transition—and can strand the machine in the state (a deadlock, developed in the R7 note).</p>
+
+<div class="note">
+<p>This is why the three rules belong in one note. <code>R5</code> and <code>R6</code> govern what a transition <em>does</em>—the selection and the transformation—while <code>R1</code> governs what the state <em>becomes</em>. Fixing an <code>R1</code> violation almost always means editing a guard (<code>R5</code>) or an action (<code>R6</code>) upstream; there is rarely anything to "fix" at the state itself.</p>
+</div>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="r5"><span class="num">2.</span> R5 — Guards: the selectors</h2>
+
+<div class="contract-box">
+<p><span class="label">R5 — Guard well-formedness.</span> Every enabled transition carries a meaningful guard (never the placeholder <code>FALSE</code>); an autonomous guard's target is a currently valid exit zone (not <em>orphan</em>); and, within a group of transitions sharing a source state and trigger, the guards are non-empty on the source semantics, mutually non-overlapping (determinism), and jointly complete (totality).</p>
+</div>
+
+<p><em>Enabled</em> here is meant in the <em>static</em> sense: a transition that is active in the model—one the designer intends to be able to fire—as opposed to one switched off by the <code>FALSE</code> placeholder. It is a different notion from the <em>runtime</em> sense used in the liveness note (R7), where a transition is <em>enabled at a configuration</em> when that configuration satisfies its guard. R5 governs the first: every transition you actually place must carry a real guard rather than the placeholder.</p>
+
+<div class="note">
+<p>Both notions belong to <em>design time</em>: PWSEditor is a <em>static</em> tool—it never runs the controller. For every state it computes the set of <em>all</em> configurations the assembly can occupy there, across every possible execution, and checks the Correct-by-Construction rules against that picture. The <em>runtime</em> sense is discharged elsewhere: actually firing a transition when a live configuration satisfies its guard happens on a target device—e.g. a PLC programmed in IEC&nbsp;61131-3 Structured Text—to which the verified controller is exported.</p>
+</div>
+
+<h3>Why it matters</h3>
+
+<p>A guard implements the <em>selection</em> step of the inductive construction. On a triggered transition it partitions the source semantics <code>Conf(source)</code>: only the configurations satisfying the guard are transferred (and possibly transformed) into the target. The partition is therefore not cosmetic—it decides, configuration by configuration, what semantics is injected downstream. When the partition is malformed, it corrupts that injection in a precise way, and the corruption surfaces later as a state-level symptom.</p>
+
+<div class="example">
+<p><strong>Micro-example 1 — a partition, built and repaired.</strong> The Laser&ndash;Cover assembly (Figure&nbsp;1) has two native configurations, <code>{(laser.Off, cover.Open), (laser.Off, cover.Closed)}</code>. They reach <code>Idle</code> through its <em>initial</em> transition—the arrow from the black dot—which carries no restricting guard and so delivers both: <code>Conf(Idle) = {(laser.Off, cover.Open), (laser.Off, cover.Closed)}</code>. A single <code>start</code> transition guarded by <code>[(cover.Closed)]</code> leaves the partition <em>incomplete</em>—nothing selects <code>cover.Open</code> (Figure&nbsp;2, guard in orange). Adding a second <code>start</code> transition guarded by <code>[(cover.Open)]</code>, to <code>Fail</code>, completes it: the two guards are now disjoint and jointly total, so every configuration is selected exactly once (Figure&nbsp;3).</p>
+</div>
+
+<figure>
+<img src="assembly-cover-laser.png" alt="The Laser-Cover assembly: component cover with states Open and Closed (autonomous), and component laser with states Off and On switched by on/off.">
+<figcaption><strong>Figure 1</strong> &mdash; The Laser&ndash;Cover assembly. <code>cover</code> moves autonomously between <code>Open</code> and <code>Closed</code>, which are both <em>initial</em> states&mdash;each denoted by an arrow starting from a black dot. <code>laser</code> switches <code>Off</code>/<code>On</code> only on the controller's <code>on</code>/<code>off</code> commands, starting in <code>Off</code>.</figcaption>
+</figure>
+
+<figure>
+<img src="r5-guard-incomplete.png" alt="A slice of the Laser-Cover controller in PWSEditor: the initial pseudostate feeds Idle, whose single start transition to Work is guarded [(cover.Closed)]; the guard leaves cover.Open unselected." style="width:56%;">
+<figcaption><strong>Figure 2</strong> &mdash; An incomplete guard, rendered live in PWSEditor. This is a slice of the actual Laser&ndash;Cover controller: <code>Idle</code> is entered from the initial pseudostate (the black dot), which carries no restricting guard and so delivers both native configurations, <code>Conf(Idle) = {(cover.Open, laser.Off), (cover.Closed, laser.Off)}</code>. Its single <code>start</code> transition is guarded <code>[(cover.Closed)]</code> and selects only <code>(cover.Closed, laser.Off)</code>&mdash;nothing selects <code>(cover.Open, laser.Off)</code>&mdash;so the partition is <em>incomplete</em>: the <code>start</code> event can occur in a configuration with no defined response. PWSEditor colours the offending guard <span style="color:#c46a0f;font-weight:600;">orange</span> right on its annotation card.</figcaption>
+</figure>
+
+<figure>
+<img src="r5-guard-partition.png" alt="The same Laser-Cover slice with the partition repaired: Idle now has two start transitions, one to Fail guarded [(cover.Open)], one to Work guarded [(cover.Closed)] with action laser.on; both guards render black.">
+<figcaption><strong>Figure 3</strong> &mdash; The repaired partition, in PWSEditor. A second <code>start</code> transition guarded <code>[(cover.Open)]</code> is added, targeting a supplementary <code>Fail</code> state that absorbs the open-cover case. The two guards are now disjoint and jointly total&mdash;<code>P &and; &not;P = &perp;</code>, <code>P &or; &not;P = &top;</code>&mdash;so every configuration in <code>Conf(Idle)</code> is selected by exactly one transition, and both guards return to <strong>black</strong> on their cards.</figcaption>
+</figure>
+
+<div class="warning">
+<p><strong>Failure modes.</strong></p>
+<ul>
+  <li><strong>Empty coverage</strong> — the guard has empty intersection with the source semantics: the transition contributes nothing (a dead transition), and the configurations it was meant to carry never reach the target.</li>
+  <li><strong>Overlap</strong> — two enabled transitions in the same trigger group both cover a configuration: the controller's response to that event is <em>nondeterministic</em>.</li>
+  <li><strong>Incomplete partition</strong> — some source configurations satisfy no guard in the group: the event can occur with <em>no defined response</em>—a gap that later reappears as a deadlock.</li>
+  <li><strong><code>FALSE</code> guard</strong> — the placeholder guard that never fires: an enabled transition that is effectively absent.</li>
+  <li><strong>Orphan guard</strong> — an autonomous guard whose exit-zone target has disappeared or become internal after a model change: a boundary condition that no longer exists.</li>
+</ul>
+<p style="margin-top:.6rem;">For space, only the <em>incomplete partition</em> is worked through here as a figure (Figures&nbsp;2&ndash;3); the other modes corrupt the guard set in the same local way and surface through the same guard-label diagnostics.</p>
+</div>
+
+<div class="note">
+<p><strong>In PWSEditor.</strong> The guard popup (<code>GuardAnnotation</code>) is preventive: it offers only guards meaningful for the current semantics, filtering obvious empties and overlaps, and—for autonomous guards—only eligible exit-zone targets not already covered from the same source. Live diagnostics color the label: <span class="label-red">red</span> for a <code>FALSE</code> or orphan guard, orange for empty / overlapping / incomplete partitions. <code>FALSE Guard</code> and <code>Orphan Guard</code> reach the <em>Controller Report</em>; the partition checks remain diagram-level.</p>
+</div>
+
+<figure>
+<img src="r5-initial-partition.png" alt="Two initial transitions from separate black dots: one guarded [(cover.Open)] into Idle, one guarded [(cover.Closed)] into Ready." style="width:66.3%;">
+<figcaption><strong>Figure 4</strong> &mdash; A well-formed partition on the initial transitions. The cover's starting value selects <code>Idle</code> (guard <code>[(cover.Open)]</code>) or <code>Ready</code> (guard <code>[(cover.Closed)]</code>)&mdash;disjoint and jointly total over <code>{Open, Closed}</code>, so exactly one initial state is entered.</figcaption>
+</figure>
+
+<div class="example">
+<p><strong>Micro-example 2.</strong> Here the same two native configurations arrive <em>separately</em> at <code>Idle</code> and <code>Ready</code>: each initial transition now carries a guard—<code>[(cover.Open)]</code> into <code>Idle</code>, <code>[(cover.Closed)]</code> into <code>Ready</code> (Figure&nbsp;4)—so <code>(laser.Off, cover.Open)</code> reaches <code>Idle</code> and <code>(laser.Off, cover.Closed)</code> reaches <code>Ready</code>. The guard on the <em>initial</em> transition can thus be read as a partition of the native configurations, one per initial state. It is well-formed—non-empty, non-overlapping, complete. Drop one guard and it becomes <em>incomplete</em>—the cover can start in a value no initial transition selects. Set both to <code>[cover.Closed]</code> and it becomes both <em>overlapping</em> (two transitions claim <code>Closed</code>) and <em>incomplete</em> (nothing claims <code>Open</code>). Each malformation is visible on the guard labels before it ever propagates to a state.</p>
+</div>
+
+<p><a href="part-4-designing-correct-controllers.html#s4">&#8592; Back to R5 in Part&nbsp;IV</a></p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="r6"><span class="num">3.</span> R6 — Actions: the transformers</h2>
+
+<div class="contract-box">
+<p><span class="label">R6 — Action fireability.</span> Every action names a <code>machine.event</code> that is actually fireable from the semantics reaching the transition. An action that is not fireable is a command the component cannot obey.</p>
+</div>
+
+<h3>Why it matters</h3>
+
+<p>If a guard is the selection step, an action is the <em>transformation</em> step. An action <code>⟨machine.event⟩</code> is applied to each selected configuration, driving the targeted component through the corresponding transition of its interface—<code>⟨laser.on⟩</code> turns a laser from <code>Off</code> to <code>On</code>—and the transformed configuration is what accumulates into the target's <code>Conf</code>. For this to be meaningful, the component must actually be able to accept that event in the configurations that reach the transition. An action that names an event unreachable from the source semantics is an <em>orphan</em>: a command issued into the void, which either does nothing or describes a component transition that cannot occur.</p>
+
+<div class="warning">
+<p><strong>Failure mode.</strong> <strong>Orphan action</strong> — the action's <code>machine.event</code> is not fireable from the semantics that can actually reach the transition. The command is stale (the event left the component interface) or misplaced (the component is never in a state that accepts it here). Note the semantics-aware caveat the tool honours: when the source-side semantics is not yet available, the action is <em>not</em> flagged—orphan-action detection is only as strong as the semantics it can see.</p>
+</div>
+
+<div class="note">
+<p><strong>In PWSEditor.</strong> The action popup (<code>ActionAnnotation</code>) collects the valid action set from the source semantics <code>SS</code> (restricted by the guard where possible, falling back to <code>CS</code>); for autonomous transitions it collects them after applying the matching exit-zone transition. Insertable actions are filtered to that set, so orphans are hard to create. An action list containing an invalid action is colored <span class="label-red">red</span> with a tooltip explaining why, and each invalid action is reported as <code>Orphan Action</code>.</p>
+</div>
+
+<figure>
+<img src="r6-actions-valid-orphan.png" alt="Three panels of Ready and Work. Left: valid—start emits laser.on and stop emits laser.off, both black. Middle: orphan—start empty, stop laser.off red, Work ring red. Right: provisional—start guard FALSE with laser.on red, Work ring gold, stop laser.off blue." style="width:100%;">
+<figcaption><strong>Figure 5</strong> &mdash; How PWSEditor colours an action. <strong>Left (valid):</strong> on <code>start</code> (<code>Ready → Work</code>) <code>⟨laser.on⟩</code> is fireable—the laser is <code>Off</code> in <code>Ready</code>—and on <code>stop</code> <code>⟨laser.off⟩</code> is fireable too; both render <strong>black</strong>. <strong>Middle (orphan):</strong> <code>start</code> no longer emits <code>⟨laser.on⟩</code> (empty <code>⟨ ⟩</code>), so the laser stays <code>Off</code>, <code>Work</code> never reaches its declared <code>(Closed, On)</code> and is flagged <span class="label-red">red</span>, and <code>stop</code>'s <code>⟨laser.off⟩</code> is not fireable from that <code>Off</code> configuration—an <em>orphan</em> action, <span class="label-red">red</span>. <strong>Right (provisional):</strong> <code>start</code>'s guard is <code>[FALSE]</code>, so nothing reaches <code>Work</code>; its <code>Acc</code> is empty and the state is <em>unreachable</em> (gold ring). With no reaching semantics to test against, <code>stop</code>'s <code>⟨laser.off⟩</code> is validated against the declared <code>Sem</code> only and drawn <strong style="color:#1a5ab8;">blue</strong> (provisional)—not red, since the action is not wrong; the state is simply unreachable.</figcaption>
+</figure>
+
+<div class="note">
+<p><strong>Three colours for an action.</strong> PWSEditor distinguishes three cases when it validates an action against the semantics reaching its transition. <strong>Black</strong>—fireable, validated against the accumulated semantics <code>Acc</code> of the source. <span class="label-red"><strong>Red</strong></span>—an <em>orphan</em> action, not fireable from that semantics. <strong style="color:#1a5ab8;">Blue</strong>—<em>provisional</em>: when <code>Acc</code> is empty because the source is <em>unreachable</em>, there is no reaching configuration to test against, so the check falls back to the declared constraints <code>Sem</code>. The action is then drawn provisional rather than black (which would over-assert a validity nothing exercises) or red (the action is not wrong—the state is simply unreachable, already flagged in gold). This provisional blue matches the <code>P</code> / constraints-only marker carried by that state's <code>RS</code> rows, since everything about an unreachable state is derived from <code>Sem</code> alone.</p>
+<p style="margin-top:.6rem;font-size:.92em;"><strong>Reproduce it.</strong> The three cases are provided as PWSEditor example files under <code>pws-examples/</code>: <code>laserCover-base.pws</code> (valid), <code>laserCover-R6-orphan-action.pws</code> (orphan — <code>start</code>'s action emptied), and <code>laserCover-R6-unreachable-provisional.pws</code> (provisional — <code>start</code> guarded <code>[FALSE]</code>). Open one and recompute to see the same colouring; each is a modification of the base <code>laserCover</code> controller.</p>
+</div>
+
+<div class="example">
+<p><strong>Micro-example.</strong> On the transition <code>Ready → Work</code>, the action <code>⟨laser.on⟩</code> is fireable (Figure&nbsp;5): in <code>Ready</code> the laser is <code>Off</code>, so <code>on</code> is a valid interface transition, and the result <code>(Closed, On)</code> is exactly the semantics <code>Work</code> expects. Put <code>⟨laser.on⟩</code> instead on a transition whose source already has the laser <code>On</code>, and the event is not fireable from that semantics—an orphan action, flagged before it can inject a phantom configuration downstream.</p>
+</div>
+
+<p><a href="part-4-designing-correct-controllers.html#s4">&#8592; Back to R6 in Part&nbsp;IV</a></p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="r1"><span class="num">4.</span> R1 — Consistency: the check</h2>
+
+<div class="contract-box">
+<p><span class="label">R1 — Constraint consistency (safety).</span> For every state <code>s</code>, <code>Conf(s) ⊆ Sem(s)</code>: every computed configuration satisfies the declared constraints. When <code>Sem(s)</code> excludes the unsafe configurations, this inclusion is the model's safety obligation.</p>
+</div>
+
+<h3>Why it matters</h3>
+
+<p>Unlike R5 and R6, R1 is not an obligation you discharge <em>directly</em>. It is the <strong>verdict</strong> on the semantics that R5 and R6 injected. <code>Conf(s)</code> is built by accumulation; if any incoming transition selects or transforms a configuration that falls outside <code>Sem(s)</code>, that configuration lands in <code>Conf(s)</code>, and the inclusion breaks. An R1 violation is therefore always a <em>pointer upstream</em>: it names a state, but its cause is a guard that admitted too much or an action that produced the wrong configuration. When the specified semantics is drawn to exclude the dangerous configurations, R1 is the safety net that catches an unsafe world the moment the wiring lets it through.</p>
+
+<div class="warning">
+<p><strong>Failure mode.</strong> <strong>Constraint violation</strong> — a computed configuration in <code>Conf(s)</code> does not imply <code>Sem(s)</code>. The offending configuration row is shown red, the state's dashboard status turns problematic, and the state is listed under constraint problems in the Controller Report.</p>
+</div>
+
+<div class="note">
+<p><strong>In PWSEditor.</strong> <code>StateSemanticsAnnotation</code> compares each computed configuration against the state's constraints and colors the violating row—and the state header—<span class="label-red">red</span>. The repair is the round trip: tighten the upstream guard so the offending configuration is no longer selected, or change the action so it is no longer produced, then watch the row and the header return to normal after recomputation.</p>
+</div>
+
+<div class="example">
+<p><strong>Micro-example.</strong> Let <code>Sem(Work) = {(Closed, On)}</code>. Suppose an incoming transition into <code>Work</code> carries a guard that fails to require <code>cover.Closed</code>, so it also transfers the source configuration with the cover open. Then <code>(Open, On) ∈ Conf(Work)</code> while <code>(Open, On) ∉ Sem(Work)</code>: R1 fails, and the <code>(Open, On)</code> row is red. The fix lives on the transition, not the state—strengthen the guard to <code>[cover.Closed]</code>, or add an action that closes the cover. Note the contrast with Part&nbsp;III: there, <code>(Open, On)</code> was reached by <em>autonomous</em> evolution (an exit zone); here the very same world is a <em>constructed</em> inconsistency, injected by a mis-wired transition.</p>
+</div>
+
+<p><a href="part-4-designing-correct-controllers.html#s4">&#8592; Back to R1 in Part&nbsp;IV</a></p>
+
+<hr>
+
+<!-- ============================================================ -->
+<h2 id="tool"><span class="num">5.</span> In PWSEditor: editing and reading the loop</h2>
+
+<p>The three rules of this note are exercised at two ends of a single recomputation, and PWSEditor is built so that both ends are visible at once. The practical workflow is the round trip:</p>
+
+<div class="step-grid">
+  <div class="step-num">1</div><div>Edit a guard or action through its in-place popup. Candidates are pre-filtered to what is meaningful for the current semantics, so many R5/R6 violations are prevented rather than merely diagnosed.</div>
+  <div class="step-num">2</div><div>The editor recomputes semantics (<code>recalculateSemantics()</code>) and updates <code>Conf(s)</code> / <code>Acc</code> on every affected state's dashboard.</div>
+  <div class="step-num">3</div><div>Read the dashboard. Configuration rows appear in blue; a constraint violation (R1) shows a red row and a red header; guard and action labels carry their own colors (red for <code>FALSE</code>/orphan, orange for partition problems).</div>
+  <div class="step-num">4</div><div>Iterate. A red state almost always traces to an upstream guard or action; adjust it and watch the color flip on the next recomputation.</div>
+</div>
+
+<p>This coupling is the reason the note keeps guards, actions and consistency together: the annotation editors and the state dashboards are two views of the same computation, and correctness is maintained by moving between them. For the full end-to-end construction of the Cover–Laser controller—where these steps are shown in sequence on real dashboards—see the tutorial in Part&nbsp;VI.</p>
+
+<div class="note">
+<p>The next two companion notes continue the thread outward from the state: <em>Answering autonomous change: the reactive space</em> (rules R2–R4) and <em>Keeping the controller alive: reachability, deadlock, and the fail-safe exception</em> (rules R7–R8).</p>
+</div>
+
+<p style="margin-top:2rem; padding-top:1rem; border-top:1px solid var(--border); font-size:0.95em;">
+<a href="part-4-designing-correct-controllers.html" style="color:var(--accent); text-decoration:none; font-weight:600;">&#8592; Return to Part&nbsp;IV — Designing Correct Controllers</a>
+</p>
+
+</div>
+</body>
+</html>
