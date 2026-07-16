@@ -585,6 +585,11 @@ The second companion note follows the direction opposite to the first. Where Fil
 <p><strong>Micro-example.</strong> In <code>Work</code>, with <code>Sem(Work) = {(Closed, On)}</code>, the cover may open autonomously, so <code>RS(Work) = {(Open, On)}</code>. Left alone, that row is red and <code>Work</code> is not well-formed. Adding the fail-safe reaction <code>Work → Idle</code> with guard <code>[cover.Open]</code> and action <code>⟨laser.off⟩</code> covers the exit zone; the row turns green (this is Part&nbsp;IV, Figure&nbsp;3.1).</p>
 </div>
 
+<figure>
+<img src="r2-coverage.png" alt="Two side-by-side PWSEditor panels of the Laser-Cover controller with Work's dashboard open. Left (Uncovered — R2 fails): Work's ring is red and its RS row Closed to Open is red with a U (uncovered) badge. Right (Covered — R2 holds): an autonomous Work to Idle transition guarded [cover.Open] with action laser.off is added, and the RS row Closed to Open reaching Idle is green.">
+<figcaption><strong>Figure 2</strong> &mdash; Coverage, read on the dashboard. <strong>Left (uncovered).</strong> In <code>Work</code> the cover may open autonomously, so <code>RS(Work)</code> contains the external exit zone <code>Closed&thinsp;&rarr;&thinsp;Open</code> (reaching <code>(Open, On)</code>). With no reaction in place the row is <span class="label-red">red</span> and tagged <strong>U</strong>, <code>Work</code>'s ring turns red, and the state is listed under <em>Uncovered Exit Zones</em>&mdash;R2 fails. <strong>Right (covered).</strong> Adding the fail-safe reaction <code>Work&thinsp;&rarr;&thinsp;Idle</code> with guard <code>[cover.Open]</code> and action <code>&#10216;laser.off&#10217;</code> answers the boundary: the <code>RS</code> row becomes <span style="color:#1f7a33;font-weight:600;">green</span> and reads <code>Closed&thinsp;&rarr;&thinsp;Open &rArr; Idle</code>, <code>Work</code>'s ring returns to normal, and R2 holds. (This is Part&nbsp;IV, Figure&nbsp;3.1.)</figcaption>
+</figure>
+
 <p><a href="part-4-designing-correct-controllers.html#s4">&#8592; Back to R2 in Part&nbsp;IV</a></p>
 
 <hr>
@@ -612,6 +617,11 @@ The second companion note follows the direction opposite to the first. Where Fil
 <p><strong>Micro-example.</strong> Suppose <code>Work</code> already covers <code>(Open, On)</code> with <code>Work → Idle [cover.Open]</code>. Adding a second autonomous transition <code>Work → Halt [cover.Open]</code> covering the same exit zone leaves R2 satisfied but violates R3: on the cover opening, the controller could go to either <code>Idle</code> or <code>Halt</code>. The standard popup would not have offered <code>Halt</code> as a target, precisely to keep the reaction unique.</p>
 </div>
 
+<figure>
+<img src="r3-nondeterminism.png" alt="The full Laser-Cover controller in PWSEditor with a supplementary Halt state. Work has two autonomous reactions on the same guard [cover.Open] with action laser.off—one to Idle, one to Halt—both drawn in orange. Work's dashboard shows the RS row Closed to Open reaching Idle and Halt, tagged N (nondeterministic)." style="width:82%;">
+<figcaption><strong>Figure 3</strong> &mdash; Two answers to one boundary. <code>Work</code>'s exit zone <code>Closed&thinsp;&rarr;&thinsp;Open</code> is covered by <em>two</em> autonomous reactions with the same guard <code>[cover.Open]</code>: <code>Work&thinsp;&rarr;&thinsp;Idle</code> and <code>Work&thinsp;&rarr;&thinsp;Halt</code>. Coverage (R2) is satisfied, but determinism (R3) fails: on the cover opening the controller could go to either target. PWSEditor draws the two competing transitions in <span style="color:#c46a0f;font-weight:600;">orange</span> and marks the <code>RS</code> row <code>Closed&thinsp;&rarr;&thinsp;Open &rArr; Idle | Halt</code> with the <strong>N</strong> (nondeterministic) badge. (<code>Halt</code> is drawn as a fail sink so its own deadlock is masked&mdash;see R8&mdash;keeping the focus on the conflict at <code>Work</code>.)</figcaption>
+</figure>
+
 <p><a href="part-4-designing-correct-controllers.html#s4">&#8592; Back to R3 in Part&nbsp;IV</a></p>
 
 <hr>
@@ -638,6 +648,11 @@ The second companion note follows the direction opposite to the first. Where Fil
 <div class="example">
 <p><strong>Micro-example.</strong> Suppose the cover machine is refactored and its <code>Closed</code> state is replaced by a differently named state. An exit zone that was computed against the old <code>Closed</code> transition now points at a source state the Assembly no longer has: it becomes orphan. No autonomous reaction can sensibly cover it; the correct move is to recompute against the new machine and drop the stale zone.</p>
 </div>
+
+<figure>
+<img src="r4-orphan-exitzone.png" alt="The Laser-Cover controller in PWSEditor after the cover machine's Closed state was deleted. Guards reading [cover.Closed] are shown red as orphan references, Ready and Work are unreachable, and Work's dashboard shows an RS row Closed to question-mark tagged O (orphan)." style="width:82%;">
+<figcaption><strong>Figure 4</strong> &mdash; An orphan exit zone after a machine refactor. The <code>cover</code> machine's <code>Closed</code> state has been removed, so every controller reference to <code>cover.Closed</code>&mdash;guards and constraints&mdash;is now dangling: PWSEditor draws those guards <span class="label-red">red</span>, and <code>Work</code>'s dashboard shows the exit zone as <code>Closed&thinsp;&rarr;&thinsp;?</code> tagged <strong>O</strong> (orphan), its source state no longer present in the Assembly. An orphan zone cannot sensibly be covered; the fix is to recompute against the current machine and drop the stale reference (here, the states that depended on <code>Closed</code> also fall unreachable).</figcaption>
+</figure>
 
 <p><a href="part-4-designing-correct-controllers.html#s4">&#8592; Back to R4 in Part&nbsp;IV</a></p>
 
@@ -668,5 +683,6 @@ The second companion note follows the direction opposite to the first. Where Fil
 </p>
 
 </div>
+<script src="selection-helper.js"></script>
 </body>
 </html>

@@ -597,6 +597,11 @@ The last companion note treats liveness—the property that the controller keeps
 <p><strong>Micro-example.</strong> Give the Cover–Laser controller a state <code>Halt</code> with no outgoing transitions, entered as an emergency stop. Every configuration of <code>Halt</code> then has no escape path—each is a primary (and, if the components cannot move either, secondary) deadlock—and any exit zone of <code>Halt</code> is uncovered. Under R2 and R7 the tool reports all of this. But that behaviour is exactly what an emergency stop is <em>supposed</em> to have; the alarms are false positives. This is the situation R8 exists for.</p>
 </div>
 
+<figure>
+<img src="r7-deadlock.png" alt="The full Laser-Cover controller in PWSEditor with an added Halt state, entered from Work on the halt event and having no outgoing transitions. Halt has a red ring; its dashboard shows the configuration (Closed, On) tagged D (deadlock) and an RS row Closed to Open tagged U (uncovered)." style="width:82%;">
+<figcaption><strong>Figure 2</strong> &mdash; An emergency stop that fails the checks. A state <code>Halt</code> is entered from <code>Work</code> on the <code>halt</code> event and has <em>no outgoing transitions</em>. Its only configuration <code>(Closed, On)</code> has no escape path&mdash;PWSEditor tags it <strong>D</strong> (deadlock)&mdash;and, since the cover can still open, its exit zone <code>Closed&thinsp;&rarr;&thinsp;Open</code> is <span class="label-red">red</span> and tagged <strong>U</strong> (uncovered). Under R7 and R2 the tool reports both. Yet this is exactly what an emergency stop is <em>meant</em> to be: the alarms are false positives&mdash;the situation R8 exists for.</figcaption>
+</figure>
+
 <p><a href="part-4-designing-correct-controllers.html#s4">&#8592; Back to R7 in Part&nbsp;IV</a></p>
 
 <hr>
@@ -626,6 +631,11 @@ The last companion note treats liveness—the property that the controller keeps
 <p><strong>Micro-example.</strong> Mark the <code>Halt</code> state of the previous example as <em>fail</em>. The uncovered-exit-zone and deadlock alarms disappear, because a halt is allowed to be terminal; but if <code>Halt</code> admitted a configuration outside its constraints (R1), or no transition ever reached it (unreachable), those would still be reported. The refuge is exempt from moving on, not from being well-defined.</p>
 </div>
 
+<figure>
+<img src="r8-failsafe.png" alt="The same controller with Halt now marked as a fail state: Halt is drawn with a dashed gold ring, its dashboard header is green, and the RS row Closed to Open is tagged F (fail-masked) instead of red U. No problems are reported." style="width:82%;">
+<figcaption><strong>Figure 3</strong> &mdash; The same <code>Halt</code>, now a declared fail state. Marking <code>Halt</code> as <em>fail</em> tells PWSEditor it is a deliberate terminal refuge: it is drawn with a <span style="color:#b58500;font-weight:600;">dashed gold ring</span>, its dashboard header returns to green, and the exit zone is tagged <strong>F</strong> (fail-masked) rather than red <strong>U</strong>. The uncovered-exit-zone (R2) and deadlock (R7) alarms disappear&mdash;but R1 (consistency) and reachability still apply: a fail state is exempt from <em>moving on</em>, not from being well-defined and reachable.</figcaption>
+</figure>
+
 <p><a href="part-4-designing-correct-controllers.html#s4">&#8592; Back to R8 in Part&nbsp;IV</a></p>
 
 <hr>
@@ -653,5 +663,6 @@ The last companion note treats liveness—the property that the controller keeps
 </p>
 
 </div>
+<script src="selection-helper.js"></script>
 </body>
 </html>

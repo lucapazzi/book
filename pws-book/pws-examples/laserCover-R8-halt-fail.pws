@@ -1,0 +1,870 @@
+{
+  "formatVersion": 1,
+  "type": "pws-workspace",
+  "controller": {
+    "type": "pws",
+    "name": "laserCover-base",
+    "states": [
+      {
+        "id": 0,
+        "name": "PseudoState",
+        "x": 252,
+        "y": 12,
+        "constraints": {
+          "raw": "ANY",
+          "any": true
+        },
+        "rawConstraintText": "ANY"
+      },
+      {
+        "id": 1,
+        "name": "Idle",
+        "x": 235,
+        "y": 115,
+        "constraints": {
+          "raw": "(cover.Open, laser.Off)",
+          "any": false,
+          "lines": [
+            [
+              {
+                "machineId": "cover",
+                "stateName": "Open"
+              },
+              {
+                "machineId": "laser",
+                "stateName": "Off"
+              }
+            ]
+          ]
+        },
+        "rawConstraintText": "(cover.Open, laser.Off)"
+      },
+      {
+        "id": 2,
+        "name": "Ready",
+        "x": 435,
+        "y": 115,
+        "constraints": {
+          "raw": "(cover.Closed, laser.Off)",
+          "any": false,
+          "lines": [
+            [
+              {
+                "machineId": "cover",
+                "stateName": "Closed"
+              },
+              {
+                "machineId": "laser",
+                "stateName": "Off"
+              }
+            ]
+          ]
+        },
+        "rawConstraintText": "(cover.Closed, laser.Off)"
+      },
+      {
+        "id": 3,
+        "name": "Work",
+        "x": 435,
+        "y": 295,
+        "constraints": {
+          "raw": "(cover.Closed, laser.On)",
+          "any": false,
+          "lines": [
+            [
+              {
+                "machineId": "cover",
+                "stateName": "Closed"
+              },
+              {
+                "machineId": "laser",
+                "stateName": "On"
+              }
+            ]
+          ]
+        },
+        "rawConstraintText": "(cover.Closed, laser.On)"
+      },
+      {
+        "id": 4,
+        "name": "Halt",
+        "x": 615,
+        "y": 270,
+        "constraints": {
+          "raw": "cover.Closed, laser.On",
+          "any": false,
+          "lines": [
+            [
+              {
+                "machineId": "cover",
+                "stateName": "Closed"
+              },
+              {
+                "machineId": "laser",
+                "stateName": "On"
+              }
+            ]
+          ]
+        },
+        "rawConstraintText": "cover.Closed, laser.On",
+        "failState": true
+      }
+    ],
+    "transitions": [
+      {
+        "id": "bda1fd89-3605-4041-8950-a60e0a950fea",
+        "source": 0,
+        "target": 1,
+        "autonomous": false,
+        "triggerEvent": "_init",
+        "controlPoint": {
+          "x": 260,
+          "y": 100
+        },
+        "enabled": true,
+        "guard": {
+          "type": "basic",
+          "machineId": "cover",
+          "stateName": "Open"
+        },
+        "actions": []
+      },
+      {
+        "id": "822f4db1-897e-49ad-b4cf-448702643425",
+        "source": 0,
+        "target": 2,
+        "autonomous": false,
+        "triggerEvent": "_init",
+        "controlPoint": {
+          "x": 460,
+          "y": 100
+        },
+        "enabled": true,
+        "guard": {
+          "type": "basic",
+          "machineId": "cover",
+          "stateName": "Closed"
+        },
+        "actions": []
+      },
+      {
+        "id": "63384458-36dd-42b9-96de-a1e1716443c3",
+        "source": 1,
+        "target": 2,
+        "autonomous": true,
+        "triggerEvent": "",
+        "controlPoint": {
+          "x": 360,
+          "y": 80
+        },
+        "enabled": true,
+        "guard": {
+          "type": "basic",
+          "machineId": "cover",
+          "stateName": "Closed"
+        },
+        "actions": []
+      },
+      {
+        "id": "34ac3895-0e0d-47ec-ae88-4660e2c43c8c",
+        "source": 2,
+        "target": 1,
+        "autonomous": true,
+        "triggerEvent": "",
+        "controlPoint": {
+          "x": 360,
+          "y": 200
+        },
+        "enabled": true,
+        "guard": {
+          "type": "basic",
+          "machineId": "cover",
+          "stateName": "Open"
+        },
+        "actions": []
+      },
+      {
+        "id": "6cefb0c1-5920-4071-9137-5bc54313f19a",
+        "source": 2,
+        "target": 3,
+        "autonomous": false,
+        "triggerEvent": "start",
+        "controlPoint": {
+          "x": 520,
+          "y": 240
+        },
+        "triggerOffset": {
+          "x": 506,
+          "y": 223
+        },
+        "enabled": true,
+        "guard": {
+          "type": "true"
+        },
+        "actions": [
+          {
+            "machineId": "laser",
+            "event": "on"
+          }
+        ]
+      },
+      {
+        "id": "951a576c-3adb-499a-b6a0-37d027e09aea",
+        "source": 3,
+        "target": 2,
+        "autonomous": false,
+        "triggerEvent": "stop",
+        "controlPoint": {
+          "x": 400,
+          "y": 240
+        },
+        "triggerOffset": {
+          "x": 356,
+          "y": 223
+        },
+        "enabled": true,
+        "guard": {
+          "type": "true"
+        },
+        "actions": [
+          {
+            "machineId": "laser",
+            "event": "off"
+          }
+        ]
+      },
+      {
+        "id": "1b02706c-2f34-4825-9774-dd31057ec6f5",
+        "source": 3,
+        "target": 1,
+        "autonomous": true,
+        "triggerEvent": "",
+        "controlPoint": {
+          "x": 240,
+          "y": 340
+        },
+        "enabled": true,
+        "guard": {
+          "type": "basic",
+          "machineId": "cover",
+          "stateName": "Open"
+        },
+        "actions": [
+          {
+            "machineId": "laser",
+            "event": "off"
+          }
+        ]
+      },
+      {
+        "id": "a92ab78d-ae54-4a4e-a1f5-93354176f6b1",
+        "source": 3,
+        "target": 4,
+        "autonomous": false,
+        "triggerEvent": "halt",
+        "controlPoint": {
+          "x": 552,
+          "y": 326
+        },
+        "enabled": true,
+        "guard": {
+          "type": "true"
+        },
+        "actions": []
+      }
+    ],
+    "pseudoState": 0,
+    "events": [
+      "halt",
+      "_init",
+      "stop",
+      "start"
+    ]
+  },
+  "assembly": {
+    "id": "PWSEditorAssembly",
+    "machines": {
+      "cover": {
+        "machine": {
+          "type": "base",
+          "name": "Cover",
+          "states": [
+            {
+              "id": 0,
+              "name": "PseudoState",
+              "x": 112,
+              "y": 32
+            },
+            {
+              "id": 1,
+              "name": "Open",
+              "x": 95,
+              "y": 115
+            },
+            {
+              "id": 2,
+              "name": "Closed",
+              "x": 315,
+              "y": 115
+            }
+          ],
+          "transitions": [
+            {
+              "id": "171665d6-3cd1-4df1-8a40-093254ab09f1",
+              "source": 0,
+              "target": 2,
+              "autonomous": false,
+              "triggerEvent": "_init",
+              "controlPoint": {
+                "x": 340,
+                "y": 100
+              },
+              "enabled": true
+            },
+            {
+              "id": "ca62ea28-a0dc-4de9-b5f4-248cd6270df2",
+              "source": 0,
+              "target": 1,
+              "autonomous": false,
+              "triggerEvent": "_init",
+              "controlPoint": {
+                "x": 120,
+                "y": 100
+              },
+              "enabled": true
+            },
+            {
+              "id": "ceb93338-0492-498d-af8a-7c07863de602",
+              "source": 1,
+              "target": 2,
+              "autonomous": true,
+              "triggerEvent": "",
+              "controlPoint": {
+                "x": 220,
+                "y": 80
+              },
+              "enabled": true
+            },
+            {
+              "id": "64153c69-9348-46e0-9692-d1c354b8b631",
+              "source": 2,
+              "target": 1,
+              "autonomous": true,
+              "triggerEvent": "",
+              "controlPoint": {
+                "x": 220,
+                "y": 200
+              },
+              "enabled": true
+            }
+          ],
+          "currentState": 1,
+          "pseudoState": 0,
+          "events": [
+            "_init"
+          ]
+        },
+        "annotations": {
+          "pseudoAliases": [
+            {
+              "x": 332,
+              "y": 32
+            }
+          ],
+          "pseudoAliasByTransition": [
+            {
+              "transitionId": "171665d6-3cd1-4df1-8a40-093254ab09f1",
+              "aliasIndex": 0
+            }
+          ]
+        }
+      },
+      "laser": {
+        "machine": {
+          "type": "base",
+          "name": "Laser",
+          "states": [
+            {
+              "id": 0,
+              "name": "PseudoState",
+              "x": 92,
+              "y": 32
+            },
+            {
+              "id": 1,
+              "name": "Off",
+              "x": 75,
+              "y": 115
+            },
+            {
+              "id": 2,
+              "name": "On",
+              "x": 255,
+              "y": 115
+            }
+          ],
+          "transitions": [
+            {
+              "id": "5440b36d-f65a-474a-b075-e460ecec9a33",
+              "source": 1,
+              "target": 2,
+              "autonomous": false,
+              "triggerEvent": "on",
+              "controlPoint": {
+                "x": 180,
+                "y": 100
+              },
+              "triggerOffset": {
+                "x": 172,
+                "y": 92
+              },
+              "enabled": true
+            },
+            {
+              "id": "9d8d2131-d1b2-4c17-b3ec-1ed749efef4d",
+              "source": 2,
+              "target": 1,
+              "autonomous": false,
+              "triggerEvent": "off",
+              "controlPoint": {
+                "x": 180,
+                "y": 180
+              },
+              "triggerOffset": {
+                "x": 171,
+                "y": 172
+              },
+              "enabled": true
+            },
+            {
+              "id": "107bc75e-3866-45f6-9d78-4e6cd77d549f",
+              "source": 0,
+              "target": 1,
+              "autonomous": false,
+              "triggerEvent": "_init",
+              "controlPoint": {
+                "x": 100,
+                "y": 80
+              },
+              "enabled": true
+            }
+          ],
+          "currentState": 1,
+          "pseudoState": 0,
+          "events": [
+            "_init",
+            "off",
+            "on"
+          ]
+        }
+      }
+    },
+    "ltlFormulas": []
+  },
+  "library": {
+    "machines": {}
+  },
+  "annotations": {
+    "showExitZoneMachineIds": true,
+    "showConfigurationUnderlines": true,
+    "initialSemanticsClosureEnabled": false,
+    "groupedTransitionAnnotations": true,
+    "stateDiameter": 50,
+    "stateBorderThickness": 1.0,
+    "stateFontSize": 12.0,
+    "pseudoAliases": [
+      {
+        "x": 452,
+        "y": 12
+      }
+    ],
+    "pseudoAliasByTransition": [
+      {
+        "transitionId": "822f4db1-897e-49ad-b4cf-448702643425",
+        "aliasIndex": 0
+      }
+    ],
+    "states": [
+      {
+        "stateName": "Idle",
+        "bounds": {
+          "x": 81,
+          "y": 117,
+          "w": 162,
+          "h": 175
+        },
+        "visible": false,
+        "offset": {
+          "x": -179,
+          "y": -23
+        }
+      },
+      {
+        "stateName": "Ready",
+        "bounds": {
+          "x": 601,
+          "y": 20,
+          "w": 162,
+          "h": 175
+        },
+        "visible": false,
+        "offset": {
+          "x": 141,
+          "y": -120
+        }
+      },
+      {
+        "stateName": "Work",
+        "bounds": {
+          "x": 601,
+          "y": 280,
+          "w": 162,
+          "h": 175
+        },
+        "visible": false,
+        "offset": {
+          "x": 141,
+          "y": -40
+        }
+      },
+      {
+        "stateName": "Halt",
+        "bounds": {
+          "x": 559,
+          "y": 400,
+          "w": 162,
+          "h": 160
+        },
+        "visible": true,
+        "offset": {
+          "x": -81,
+          "y": 105
+        }
+      }
+    ],
+    "transitions": [
+      {
+        "transitionId": "bda1fd89-3605-4041-8950-a60e0a950fea",
+        "guardBounds": {
+          "x": 164,
+          "y": 38,
+          "w": 92,
+          "h": 25
+        },
+        "actionBounds": {
+          "x": 172,
+          "y": 15,
+          "w": 38,
+          "h": 25
+        },
+        "semanticsBounds": {
+          "x": 498,
+          "y": 33,
+          "w": 149,
+          "h": 25
+        },
+        "guardVisible": true,
+        "actionVisible": false,
+        "semanticsVisible": false,
+        "guardOffset": {
+          "x": -96,
+          "y": -16
+        },
+        "actionOffset": {
+          "x": -88,
+          "y": -70
+        },
+        "semanticsOffset": {
+          "x": 238,
+          "y": -73
+        },
+        "infoOffset": {
+          "x": -50,
+          "y": -35
+        },
+        "infoSemanticsVisible": false,
+        "infoCardVisible": true
+      },
+      {
+        "transitionId": "822f4db1-897e-49ad-b4cf-448702643425",
+        "guardBounds": {
+          "x": 340,
+          "y": 38,
+          "w": 100,
+          "h": 25
+        },
+        "actionBounds": {
+          "x": 367,
+          "y": 78,
+          "w": 38,
+          "h": 25
+        },
+        "semanticsBounds": {
+          "x": 799,
+          "y": 105,
+          "w": 157,
+          "h": 25
+        },
+        "guardVisible": true,
+        "actionVisible": false,
+        "semanticsVisible": false,
+        "guardOffset": {
+          "x": -120,
+          "y": -16
+        },
+        "actionOffset": {
+          "x": -93,
+          "y": -7
+        },
+        "semanticsOffset": {
+          "x": 339,
+          "y": -1
+        },
+        "infoOffset": {
+          "x": 70,
+          "y": -35
+        },
+        "infoSemanticsVisible": false,
+        "infoCardVisible": true
+      },
+      {
+        "transitionId": "63384458-36dd-42b9-96de-a1e1716443c3",
+        "guardBounds": {
+          "x": 298,
+          "y": 78,
+          "w": 105,
+          "h": 25
+        },
+        "actionBounds": {
+          "x": 330,
+          "y": 140,
+          "w": 38,
+          "h": 25
+        },
+        "semanticsBounds": {
+          "x": 793,
+          "y": 137,
+          "w": 157,
+          "h": 25
+        },
+        "guardVisible": true,
+        "actionVisible": false,
+        "semanticsVisible": false,
+        "guardOffset": {
+          "x": -14,
+          "y": -33
+        },
+        "actionOffset": {
+          "x": -29,
+          "y": 37
+        },
+        "semanticsOffset": {
+          "x": 387,
+          "y": 26
+        },
+        "infoOffset": {
+          "x": -25,
+          "y": -13
+        },
+        "infoSemanticsVisible": false,
+        "infoCardVisible": true
+      },
+      {
+        "transitionId": "34ac3895-0e0d-47ec-ae88-4660e2c43c8c",
+        "guardBounds": {
+          "x": 313,
+          "y": 178,
+          "w": 95,
+          "h": 25
+        },
+        "actionBounds": {
+          "x": 330,
+          "y": 115,
+          "w": 38,
+          "h": 25
+        },
+        "semanticsBounds": {
+          "x": 691,
+          "y": 117,
+          "w": 149,
+          "h": 25
+        },
+        "guardVisible": true,
+        "actionVisible": false,
+        "semanticsVisible": false,
+        "guardOffset": {
+          "x": -93,
+          "y": 11
+        },
+        "actionOffset": {
+          "x": -29,
+          "y": -61
+        },
+        "semanticsOffset": {
+          "x": 379,
+          "y": -50
+        },
+        "infoOffset": {
+          "x": 5,
+          "y": 14
+        },
+        "infoSemanticsVisible": false,
+        "infoCardVisible": true
+      },
+      {
+        "transitionId": "6cefb0c1-5920-4071-9137-5bc54313f19a",
+        "guardBounds": {
+          "x": 369,
+          "y": 180,
+          "w": 49,
+          "h": 25
+        },
+        "actionBounds": {
+          "x": 476,
+          "y": 238,
+          "w": 88,
+          "h": 25
+        },
+        "semanticsBounds": {
+          "x": 765,
+          "y": 256,
+          "w": 156,
+          "h": 25
+        },
+        "guardVisible": false,
+        "actionVisible": true,
+        "semanticsVisible": false,
+        "guardOffset": {
+          "x": -118,
+          "y": -11
+        },
+        "actionOffset": {
+          "x": -20,
+          "y": 3
+        },
+        "semanticsOffset": {
+          "x": 276,
+          "y": -19
+        },
+        "infoOffset": {
+          "x": 54,
+          "y": 5
+        },
+        "infoSemanticsVisible": false,
+        "infoCardVisible": true
+      },
+      {
+        "transitionId": "951a576c-3adb-499a-b6a0-37d027e09aea",
+        "guardBounds": {
+          "x": 389,
+          "y": 258,
+          "w": 49,
+          "h": 25
+        },
+        "actionBounds": {
+          "x": 326,
+          "y": 238,
+          "w": 89,
+          "h": 25
+        },
+        "semanticsBounds": {
+          "x": 785,
+          "y": 178,
+          "w": 157,
+          "h": 25
+        },
+        "guardVisible": false,
+        "actionVisible": true,
+        "semanticsVisible": false,
+        "guardOffset": {
+          "x": -41,
+          "y": -17
+        },
+        "actionOffset": {
+          "x": -97,
+          "y": 3
+        },
+        "semanticsOffset": {
+          "x": 354,
+          "y": -13
+        },
+        "infoOffset": {
+          "x": -53,
+          "y": 5
+        },
+        "infoSemanticsVisible": false,
+        "infoCardVisible": true
+      },
+      {
+        "transitionId": "1b02706c-2f34-4825-9774-dd31057ec6f5",
+        "guardBounds": {
+          "x": 323,
+          "y": 328,
+          "w": 95,
+          "h": 25
+        },
+        "actionBounds": {
+          "x": 196,
+          "y": 288,
+          "w": 89,
+          "h": 25
+        },
+        "semanticsBounds": {
+          "x": 693,
+          "y": 167,
+          "w": 149,
+          "h": 25
+        },
+        "guardVisible": true,
+        "actionVisible": true,
+        "semanticsVisible": false,
+        "guardOffset": {
+          "x": -42,
+          "y": 7
+        },
+        "actionOffset": {
+          "x": -97,
+          "y": -3
+        },
+        "semanticsOffset": {
+          "x": 435,
+          "y": -59
+        },
+        "infoOffset": {
+          "x": 2,
+          "y": 49
+        },
+        "infoSemanticsVisible": false,
+        "infoActionsVisible": true,
+        "infoCardVisible": true
+      },
+      {
+        "transitionId": "a92ab78d-ae54-4a4e-a1f5-93354176f6b1",
+        "guardVisible": false,
+        "actionVisible": false,
+        "semanticsVisible": false,
+        "infoOffset": {
+          "x": 0,
+          "y": -50
+        },
+        "infoSemanticsVisible": false,
+        "infoCardVisible": true
+      }
+    ]
+  },
+  "ui": {
+    "windowWidth": 1098,
+    "windowHeight": 782,
+    "mainDivider": 599,
+    "leftDivider": 439,
+    "rightDivider": 441,
+    "assemblyDivider": 246,
+    "showDashboards": true,
+    "showAssemblyComponents": true,
+    "showGrid": true,
+    "snapToGrid": true,
+    "gridSize": 20,
+    "editMode": true,
+    "topCard": "assembly"
+  }
+}

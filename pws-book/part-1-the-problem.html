@@ -466,6 +466,54 @@
     -moz-tab-size: 2;
     tab-size: 2;
   }
+
+  .selection-toolbar {
+    position: absolute;
+    z-index: 9999;
+    display: none;
+    gap: 0.35rem;
+    padding: 0.4rem;
+    background: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 999px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  }
+
+  .selection-toolbar button {
+    border: none;
+    background: #ffffff;
+    color: #111827;
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.8rem;
+    font-family: 'Source Serif 4', Georgia, serif;
+    cursor: pointer;
+  }
+
+  .selection-toolbar button:hover {
+    background: #e5e7eb;
+  }
+
+  .selection-status {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: 9999;
+    background: rgba(17,24,39,0.95);
+    color: #f9fafb;
+    padding: 0.55rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(6px);
+    transition: opacity 180ms ease, transform 180ms ease;
+  }
+
+  .selection-status.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
 </style>
 </head>
 <body>
@@ -767,5 +815,6 @@ Before introducing Part–Whole Statecharts, we must understand the problem they
 <p>Providing exactly this — for reactive controllers, and in a form an engineer can genuinely use — is the motivation behind <strong>Part–Whole Statecharts</strong>. The next part introduces the model itself.</p>
 
 </div>
+<script src="selection-helper.js"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@
   "type": "pws-workspace",
   "controller": {
     "type": "pws",
-    "name": "laserCover",
+    "name": "laserCover-base",
     "states": [
       {
         "id": 0,
@@ -42,7 +42,7 @@
       {
         "id": 2,
         "name": "Ready",
-        "x": 415,
+        "x": 435,
         "y": 115,
         "constraints": {
           "raw": "(cover.Closed, laser.Off)",
@@ -65,7 +65,7 @@
       {
         "id": 3,
         "name": "Work",
-        "x": 415,
+        "x": 435,
         "y": 295,
         "constraints": {
           "raw": "(cover.Closed, laser.On)",
@@ -112,7 +112,7 @@
         "autonomous": false,
         "triggerEvent": "_init",
         "controlPoint": {
-          "x": 440,
+          "x": 460,
           "y": 100
         },
         "enabled": true,
@@ -166,7 +166,7 @@
         "autonomous": false,
         "triggerEvent": "start",
         "controlPoint": {
-          "x": 500,
+          "x": 520,
           "y": 240
         },
         "triggerOffset": {
@@ -191,7 +191,7 @@
         "autonomous": false,
         "triggerEvent": "stop",
         "controlPoint": {
-          "x": 380,
+          "x": 400,
           "y": 240
         },
         "triggerOffset": {
@@ -433,7 +433,7 @@
     "stateFontSize": 12.0,
     "pseudoAliases": [
       {
-        "x": 432,
+        "x": 452,
         "y": 12
       }
     ],
@@ -447,43 +447,43 @@
       {
         "stateName": "Idle",
         "bounds": {
-          "x": 29,
-          "y": 103,
+          "x": 55,
+          "y": 110,
           "w": 162,
           "h": 175
         },
         "visible": true,
         "offset": {
-          "x": -231,
-          "y": -37
+          "x": -205,
+          "y": -30
         }
       },
       {
         "stateName": "Ready",
         "bounds": {
-          "x": 621,
-          "y": 10,
+          "x": 579,
+          "y": 13,
           "w": 162,
           "h": 175
         },
         "visible": true,
         "offset": {
-          "x": 181,
-          "y": -130
+          "x": 119,
+          "y": -127
         }
       },
       {
         "stateName": "Work",
         "bounds": {
-          "x": 611,
-          "y": 310,
+          "x": 579,
+          "y": 273,
           "w": 162,
           "h": 175
         },
         "visible": true,
         "offset": {
-          "x": 171,
-          "y": -10
+          "x": 119,
+          "y": -47
         }
       }
     ],
@@ -503,7 +503,7 @@
           "h": 25
         },
         "semanticsBounds": {
-          "x": 368,
+          "x": 433,
           "y": 33,
           "w": 149,
           "h": 25
@@ -520,14 +520,15 @@
           "y": -70
         },
         "semanticsOffset": {
-          "x": 108,
+          "x": 173,
           "y": -73
         },
         "infoOffset": {
           "x": -50,
           "y": -35
         },
-        "infoSemanticsVisible": false
+        "infoSemanticsVisible": false,
+        "infoCardVisible": true
       },
       {
         "transitionId": "822f4db1-897e-49ad-b4cf-448702643425",
@@ -544,7 +545,7 @@
           "h": 25
         },
         "semanticsBounds": {
-          "x": 661,
+          "x": 730,
           "y": 105,
           "w": 157,
           "h": 25
@@ -553,22 +554,23 @@
         "actionVisible": false,
         "semanticsVisible": false,
         "guardOffset": {
-          "x": -100,
+          "x": -120,
           "y": -16
         },
         "actionOffset": {
-          "x": -73,
+          "x": -93,
           "y": -7
         },
         "semanticsOffset": {
-          "x": 221,
+          "x": 270,
           "y": -1
         },
         "infoOffset": {
           "x": 70,
           "y": -35
         },
-        "infoSemanticsVisible": false
+        "infoSemanticsVisible": false,
+        "infoCardVisible": true
       },
       {
         "transitionId": "63384458-36dd-42b9-96de-a1e1716443c3",
@@ -585,7 +587,7 @@
           "h": 25
         },
         "semanticsBounds": {
-          "x": 655,
+          "x": 724,
           "y": 137,
           "w": 157,
           "h": 25
@@ -594,22 +596,23 @@
         "actionVisible": false,
         "semanticsVisible": false,
         "guardOffset": {
-          "x": -13,
+          "x": -14,
           "y": -33
         },
         "actionOffset": {
-          "x": -25,
+          "x": -29,
           "y": 37
         },
         "semanticsOffset": {
-          "x": 260,
-          "y": 27
+          "x": 318,
+          "y": 26
         },
         "infoOffset": {
           "x": -25,
           "y": -13
         },
-        "infoSemanticsVisible": false
+        "infoSemanticsVisible": false,
+        "infoCardVisible": true
       },
       {
         "transitionId": "34ac3895-0e0d-47ec-ae88-4660e2c43c8c",
@@ -626,7 +629,7 @@
           "h": 25
         },
         "semanticsBounds": {
-          "x": 561,
+          "x": 626,
           "y": 117,
           "w": 149,
           "h": 25
@@ -635,22 +638,23 @@
         "actionVisible": false,
         "semanticsVisible": false,
         "guardOffset": {
-          "x": -82,
-          "y": 9
+          "x": -93,
+          "y": 11
         },
         "actionOffset": {
-          "x": -25,
+          "x": -29,
           "y": -61
         },
         "semanticsOffset": {
-          "x": 250,
+          "x": 314,
           "y": -50
         },
         "infoOffset": {
           "x": 5,
           "y": 14
         },
-        "infoSemanticsVisible": false
+        "infoSemanticsVisible": false,
+        "infoCardVisible": true
       },
       {
         "transitionId": "6cefb0c1-5920-4071-9137-5bc54313f19a",
@@ -667,7 +671,7 @@
           "h": 25
         },
         "semanticsBounds": {
-          "x": 627,
+          "x": 696,
           "y": 256,
           "w": 156,
           "h": 25
@@ -676,22 +680,23 @@
         "actionVisible": true,
         "semanticsVisible": false,
         "guardOffset": {
-          "x": -98,
+          "x": -118,
           "y": -11
         },
         "actionOffset": {
-          "x": 0,
+          "x": -20,
           "y": 3
         },
         "semanticsOffset": {
-          "x": 158,
+          "x": 207,
           "y": -19
         },
         "infoOffset": {
           "x": 54,
           "y": 5
         },
-        "infoSemanticsVisible": false
+        "infoSemanticsVisible": false,
+        "infoCardVisible": true
       },
       {
         "transitionId": "951a576c-3adb-499a-b6a0-37d027e09aea",
@@ -708,7 +713,7 @@
           "h": 25
         },
         "semanticsBounds": {
-          "x": 647,
+          "x": 716,
           "y": 178,
           "w": 157,
           "h": 25
@@ -717,22 +722,23 @@
         "actionVisible": true,
         "semanticsVisible": false,
         "guardOffset": {
-          "x": -21,
+          "x": -41,
           "y": -17
         },
         "actionOffset": {
-          "x": -77,
+          "x": -97,
           "y": 3
         },
         "semanticsOffset": {
-          "x": 236,
+          "x": 285,
           "y": -13
         },
         "infoOffset": {
           "x": -53,
           "y": 5
         },
-        "infoSemanticsVisible": false
+        "infoSemanticsVisible": false,
+        "infoCardVisible": true
       },
       {
         "transitionId": "1b02706c-2f34-4825-9774-dd31057ec6f5",
@@ -749,7 +755,7 @@
           "h": 25
         },
         "semanticsBounds": {
-          "x": 563,
+          "x": 628,
           "y": 167,
           "w": 149,
           "h": 25
@@ -758,15 +764,15 @@
         "actionVisible": true,
         "semanticsVisible": false,
         "guardOffset": {
-          "x": -29,
+          "x": -42,
           "y": 7
         },
         "actionOffset": {
-          "x": -92,
+          "x": -97,
           "y": -3
         },
         "semanticsOffset": {
-          "x": 306,
+          "x": 370,
           "y": -59
         },
         "infoOffset": {
@@ -774,7 +780,8 @@
           "y": 49
         },
         "infoSemanticsVisible": false,
-        "infoActionsVisible": true
+        "infoActionsVisible": true,
+        "infoCardVisible": true
       }
     ]
   },
@@ -783,8 +790,8 @@
     "windowHeight": 782,
     "mainDivider": 758,
     "leftDivider": 693,
-    "rightDivider": 560,
-    "assemblyDivider": 328,
+    "rightDivider": 602,
+    "assemblyDivider": 357,
     "showDashboards": true,
     "showAssemblyComponents": true,
     "showGrid": true,

@@ -559,12 +559,12 @@ This is the first of three companion notes that develop the Correct-by-Construct
 
 <figure>
 <img src="r5-guard-incomplete.png" alt="A slice of the Laser-Cover controller in PWSEditor: the initial pseudostate feeds Idle, whose single start transition to Work is guarded [(cover.Closed)]; the guard leaves cover.Open unselected." style="width:56%;">
-<figcaption><strong>Figure 2</strong> &mdash; An incomplete guard, rendered live in PWSEditor. This is a slice of the actual Laser&ndash;Cover controller: <code>Idle</code> is entered from the initial pseudostate (the black dot), which carries no restricting guard and so delivers both native configurations, <code>Conf(Idle) = {(cover.Open, laser.Off), (cover.Closed, laser.Off)}</code>. Its single <code>start</code> transition is guarded <code>[(cover.Closed)]</code> and selects only <code>(cover.Closed, laser.Off)</code>&mdash;nothing selects <code>(cover.Open, laser.Off)</code>&mdash;so the partition is <em>incomplete</em>: the <code>start</code> event can occur in a configuration with no defined response. PWSEditor colours the offending guard <span style="color:#c46a0f;font-weight:600;">orange</span> right on its annotation card.</figcaption>
+<figcaption><strong>Figure 2</strong> &mdash; An incomplete guard, rendered live in PWSEditor. This is a slice of the actual Laser&ndash;Cover controller: <code>Idle</code> is entered from the initial pseudostate (the black dot), which carries no restricting guard and so delivers both native configurations, <code>Conf(Idle) = {(cover.Open, laser.Off), (cover.Closed, laser.Off)}</code>. Its single <code>start</code> transition is guarded <code>[(cover.Closed)]</code> and selects only <code>(cover.Closed, laser.Off)</code>&mdash;nothing selects <code>(cover.Open, laser.Off)</code>&mdash;so the partition is <em>incomplete</em>: the <code>start</code> event can occur in a configuration with no defined response. PWSEditor colours the offending guard <span style="color:#c46a0f;font-weight:600;">orange</span> right on its annotation card. (The red ring on <code>Work</code> is incidental to R5: it flags an <em>uncovered exit zone</em>&mdash;in <code>Work</code> the cover may open autonomously with no transition to absorb it&mdash;a <em>reactive</em> obligation taken up later under R2, not a guard defect.)</figcaption>
 </figure>
 
 <figure>
 <img src="r5-guard-partition.png" alt="The same Laser-Cover slice with the partition repaired: Idle now has two start transitions, one to Fail guarded [(cover.Open)], one to Work guarded [(cover.Closed)] with action laser.on; both guards render black.">
-<figcaption><strong>Figure 3</strong> &mdash; The repaired partition, in PWSEditor. A second <code>start</code> transition guarded <code>[(cover.Open)]</code> is added, targeting a supplementary <code>Fail</code> state that absorbs the open-cover case. The two guards are now disjoint and jointly total&mdash;<code>P &and; &not;P = &perp;</code>, <code>P &or; &not;P = &top;</code>&mdash;so every configuration in <code>Conf(Idle)</code> is selected by exactly one transition, and both guards return to <strong>black</strong> on their cards.</figcaption>
+<figcaption><strong>Figure 3</strong> &mdash; The repaired partition, in PWSEditor. A second <code>start</code> transition guarded <code>[(cover.Open)]</code> is added, targeting a supplementary <code>Fail</code> state that absorbs the open-cover case. The two guards are now disjoint and jointly total&mdash;<code>P &and; &not;P = &perp;</code>, <code>P &or; &not;P = &top;</code>&mdash;so every configuration in <code>Conf(Idle)</code> is selected by exactly one transition, and both guards return to <strong>black</strong> on their cards. (<code>Fail</code> and <code>Work</code> still carry red rings for a separate reason&mdash;<em>uncovered exit zones</em>, an R2 matter rather than R5. <code>Fail</code>, being a deliberate fail-safe sink, may waive these reactive obligations once marked as a <em>fail state</em>; see R8 and the fail-state setting.)</figcaption>
 </figure>
 
 <div class="warning">
@@ -656,6 +656,11 @@ This is the first of three companion notes that develop the Correct-by-Construct
 <p><strong>Micro-example.</strong> Let <code>Sem(Work) = {(Closed, On)}</code>. Suppose an incoming transition into <code>Work</code> carries a guard that fails to require <code>cover.Closed</code>, so it also transfers the source configuration with the cover open. Then <code>(Open, On) ∈ Conf(Work)</code> while <code>(Open, On) ∉ Sem(Work)</code>: R1 fails, and the <code>(Open, On)</code> row is red. The fix lives on the transition, not the state—strengthen the guard to <code>[cover.Closed]</code>, or add an action that closes the cover. Note the contrast with Part&nbsp;III: there, <code>(Open, On)</code> was reached by <em>autonomous</em> evolution (an exit zone); here the very same world is a <em>constructed</em> inconsistency, injected by a mis-wired transition.</p>
 </div>
 
+<figure>
+<img src="r1-consistency-red.png" alt="The full Laser-Cover controller in PWSEditor with a mis-wired start transition Idle to Work guarded [TRUE] with action laser.on. Work's dashboard is open: Sem (Closed, On), Acc listing (Closed, On) green and a red (Open, On) row. Both Work and Ready carry red rings." style="width:58%;">
+<figcaption><strong>Figure 6</strong> &mdash; R1 as a verdict, read in the full controller. A mis-wired <code>start</code> transition <code>Idle&thinsp;&rarr;&thinsp;Work</code> is guarded <code>[TRUE]</code>&mdash;it fails to require <code>cover.Closed</code>&mdash;so it transfers <code>Idle</code>'s open-cover configuration into <code>Work</code>. <code>Conf(Work)</code> thus picks up <code>(Open, On)</code>, outside <code>Sem(Work) = {(Closed, On)}</code>, and PWSEditor colours the offending <code>Acc</code> row&mdash;and the state header&mdash;<span class="label-red">red</span>. Because the controller is fully connected, the inconsistency <em>propagates</em>: <code>Work</code>'s <code>stop</code> reaction <code>&#10216;laser.off&#10217;</code> carries <code>(Open, Off)</code> into <code>Ready</code>, which then violates <code>Sem(Ready) = {(Closed, Off)}</code>&mdash;hence <code>Ready</code>'s ring is red too. The repair lives upstream: strengthen the guard to <code>[cover.Closed]</code>, and after recomputation both states return to normal.</figcaption>
+</figure>
+
 <p><a href="part-4-designing-correct-controllers.html#s4">&#8592; Back to R1 in Part&nbsp;IV</a></p>
 
 <hr>
@@ -683,5 +688,6 @@ This is the first of three companion notes that develop the Correct-by-Construct
 </p>
 
 </div>
+<script src="selection-helper.js"></script>
 </body>
 </html>

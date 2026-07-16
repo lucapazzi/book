@@ -595,14 +595,16 @@ Part II established the structure of a PWS system: an Assembly of controlled com
 <p><strong>Computational Model</strong></p>
 <p>For each controller state <code>s</code>, we compute <code>Conf(s)</code> inductively:</p>
 <p>1. <strong>Base Step:</strong> collect all possible initial configurations into <code>Conf(Init)</code>.</p>
-<p>2. <strong>Inductive Step:</strong> for each transition <code>s → t</code> in the controller, every configuration in <code>Conf(s)</code> is transformed (subject to guards and component capabilities), and the resulting configurations are <em>accumulated</em> into <code>Conf(t)</code>.</p>
+<p>2. <strong>Inductive Step:</strong> for each transition <code>s → t</code> in the controller, every configuration in <code>Conf(s)</code> is transformed, and the resulting configurations are <em>accumulated</em> into <code>Conf(t)</code>. How a configuration is transformed depends on the transition:</p>
+<p style="margin-left:1.2rem">— A <strong>guard-only</strong> transition carries no action: it does not change the Assembly, so each configuration selected by the guard is passed through unchanged.</p>
+<p style="margin-left:1.2rem">— A transition carrying an <strong>action</strong> <code>m.e</code> applies that event to the Assembly under <em>strict event semantics</em>: only the configurations in which <code>m</code> is in a state where the event <code>e</code> can fire are transformed (moving <code>m</code> to the event's target state); <strong>configurations in which <code>e</code> cannot fire are discarded</strong>—they contribute nothing to <code>Conf(t)</code>, rather than being carried over unchanged.</p>
 <p>3. <strong>Final result:</strong> after all transitions have been processed, the final <code>Conf(s)</code> for each state <code>s</code> represents the <em>obtained semantics</em>—the actual configurations the system can reach.</p>
 </div>
 
 <p><strong>Notation.</strong> <code>Sem(s)</code> denotes the <em>specified</em> semantics (declared by the designer); <code>Conf(s)</code> denotes the <em>obtained</em> semantics (computed from the controller structure). Verification checks that <code>Conf(s)</code> ⊆ <code>Sem(s)</code>—that the system never leaves the configurations the designer admits.</p>
 </div>
 
-<p>The set of configurations associated with each controller state is transmitted to other states through the transitions of the controller. If the controller moves from <code>s</code> to <code>t</code> without directing any action toward the Assembly, <code>t</code> inherits the same set of configurations as <code>s</code>—together with whatever is contributed by every other state entering <code>t</code>. If the transition does carry actions, some configurations are transformed into other configurations; these may already belong to the target state's set, or may not, in which case they are added to it.</p>
+<p>The set of configurations associated with each controller state is transmitted to other states through the transitions of the controller. If the controller moves from <code>s</code> to <code>t</code> without directing any action toward the Assembly, <code>t</code> inherits the same set of configurations as <code>s</code>—together with whatever is contributed by every other state entering <code>t</code>. If the transition does carry an action <code>m.e</code>, the transformation is <em>strict</em>: the configurations in which the event <code>e</code> can actually fire are transformed and passed to <code>t</code> (they may already belong to the target state's set, or may be new, in which case they are added), while the configurations in which <code>e</code> cannot fire are simply dropped and never reach <code>t</code>. This strict firing rule—not to be confused with the set-theoretic sense of <em>strict subset</em> used above for <code>Conf ⊊ Sem</code>—is what makes an unfireable action visible as an <em>orphan action</em> in later chapters: if every configuration reaching the transition is discarded, the action contributes nothing at all.</p>
 
 <h3>Base Step</h3>
 
@@ -861,5 +863,6 @@ Conf(Y) := Conf(Y) ∪ {c'}
 </blockquote>
 
 </div>
+<script src="selection-helper.js"></script>
 </body>
 </html>
